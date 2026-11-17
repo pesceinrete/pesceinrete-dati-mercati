@@ -118,8 +118,13 @@ function pir_dm_shortcode( $attributi = array() ) {
 	if ( ! $html ) {
 		return '<p>Sezione dati non disponibile. Contattare la redazione.</p>';
 	}
+	// Lo stile della pagina sta nell'<head>: va conservato prima di tenere solo il <body>.
+	$stile = '';
+	if ( preg_match( '#<style\b[^>]*>.*?</style>#si', $html, $blocco ) ) {
+		$stile = $blocco[0];
+	}
 	if ( preg_match( '#<body[^>]*>(.*)</body>#si', $html, $parti ) ) {
-		$html = $parti[1];
+		$html = $stile . $parti[1];
 	}
 	// La testata (briciole, titolo, occhiello) serve solo all'anteprima:
 	// dentro il sito titolo e menu li mette il tema.

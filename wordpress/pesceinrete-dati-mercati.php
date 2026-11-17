@@ -69,8 +69,13 @@ function pir_dm_shortcode( $attributi = array() ) {
 	$html = file_get_contents( $pagina ); // phpcs:ignore WordPress.WP.AlternativeFunctions
 
 	// Il tema fornisce testata, menu e piede: della pagina serve il corpo.
+	// Lo stile della pagina sta nell'<head>: va conservato prima di tenere solo il <body>.
+	$stile = '';
+	if ( preg_match( '#<style\b[^>]*>.*?</style>#si', $html, $blocco ) ) {
+		$stile = $blocco[0];
+	}
 	if ( preg_match( '#<body[^>]*>(.*)</body>#si', $html, $parti ) ) {
-		$html = $parti[1];
+		$html = $stile . $parti[1];
 	}
 	// Testata e logo servono solo all'anteprima fuori dal sito.
 	$html = preg_replace( '#<header class="pir-testata"[^>]*>.*?</header>#si', '', $html );

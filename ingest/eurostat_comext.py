@@ -107,7 +107,7 @@ def definizioni() -> dict[str, dict]:
     return risultato
 
 
-def indirizzo(codice: str, dal_anno: int) -> str:
+def indirizzo(codice: str, dal_anno: int, al_anno: int | None = None) -> str:
     parametri = {
         "format": "JSON",
         "freq": "M",
@@ -117,7 +117,33 @@ def indirizzo(codice: str, dal_anno: int) -> str:
         "sinceTimePeriod": f"{dal_anno}-01",
         "lang": "EN",
     }
+    if al_anno is not None:
+        parametri["untilTimePeriod"] = f"{al_anno}-12"
     return f"{BASE}/{INSIEME}?" + urllib.parse.urlencode(parametri)
+
+
+def unisci(destinazione: dict, parte: dict) -> None:
+    """Aggiunge i mesi di una risposta parziale a quelli già raccolti."""
+    for partner, periodi in parte.items():
+        destinazione.setdefault(partner, {}).update(periodi)
+
+
+def scarica_a_blocchi(codice: str, dal_anno: int) -> dict:
+    """Per i codici con molti partner (il salmone) il servizio risponde
+    413, "risposta troppo grande", se si chiedono tutti gli anni insieme.
+    In quel caso si chiede un anno per volta e si uniscono i pezzi: il
+    risultato è identico a quello di una richiesta unica."""
+    from datetime import date
+    risultato: dict = {}
+    for anno in range(dal_anno, date.today().year + 1):
+        try:
+            unisci(risultato, analizza(scarica(indirizzo(codice, anno, anno))))
+        except urllib.error.HTTPError as errore:
+            # un anno ancora senza mesi pubblicati non è un errore
+            if errore.code in (400, 404) and anno == date.today().year:
+                continue
+            raise
+    return risultato
 
 
 def scarica(url: str, timeout: int = 90) -> dict:
@@ -238,6 +264,15 @@ def per_codice(codice: str, dal_anno: int) -> dict:
         try:
             documento = scarica(indirizzo(codice, dal_anno))
         except urllib.error.HTTPError as errore:
+            if errore.code == 413:
+                risultato = scarica_a_blocchi(codice, dal_anno)
+                totale = sum(v["quantita"] for p in risultato.values() for v in p.values())
+                STATO_CODICI[codice] = (
+                    f"ok, {len(risultato)} partner (scaricato un anno per volta)" if totale > 0
+                    else "riconosciuto ma senza quantità: verificare il codice"
+                )
+                _CACHE[chiave] = risultato
+                return risultato
             if errore.code in (400, 404):
                 STATO_CODICI[codice] = f"codice non riconosciuto dal servizio (HTTP {errore.code})"
                 _CACHE[chiave] = {}

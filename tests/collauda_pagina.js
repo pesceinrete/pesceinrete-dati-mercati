@@ -70,7 +70,13 @@ setTimeout(() => {
   verifica("tre delta in una riga", (testo("pir-delta").match(/%/g) || []).length === 3, testo("pir-delta"));
   verifica("lede redazionale presente", testo("pir-lede").length > 120 && /\d/.test(testo("pir-lede")));
   verifica("firma e data", /settimana|week/i.test(testo("pir-firma")));
-  verifica("testatina con la settimana", /settimana 39|week 39/i.test(testo("pir-quando")), testo("pir-quando"));
+  // La settimana attesa si ricava dai dati, non è fissa: vale per i dati dimostrativi e per quelli veri.
+  const numeroSettimana = String(parseInt(prodotto.ultimo_periodo.slice(6), 10));
+  verifica(
+    "testatina con la settimana",
+    new RegExp("(settimana|week) " + numeroSettimana + "\\b", "i").test(testo("pir-quando")),
+    testo("pir-quando")
+  );
   verifica("ponte verso IGB con la specie", /salmone|salmon/i.test(testo("pir-igb-titolo")) && doc.getElementById("pir-igb-link").href.indexOf("igb.pesceinrete.com") > -1);
 
   console.log("\nFascia di stato");
@@ -173,6 +179,10 @@ setTimeout(() => {
   );
 
   const flussi = doc.getElementById("flussi");
+  const conFlussi = !!(dettaglio.flussi && Object.keys(dettaglio.flussi).length);
+  if (!conFlussi) {
+    console.log("  --    flussi non presenti per questa specie: controlli saltati");
+  } else {
   verifica("sezione flussi mostrata quando la serie esiste", !flussi.hidden);
   verifica(
     "totale mobile a dodici mesi",
@@ -184,6 +194,7 @@ setTimeout(() => {
     testo("pir-flussi-valore-nota").indexOf(lingua === "en" ? "Not a purchase price" : "Non è un prezzo di acquisto") > -1
   );
   verifica("grafico mensile a barre", doc.querySelectorAll("#pir-flussi-grafico rect").length > 12);
+  }
 
   const voci = doc.getElementById("pir-voci").textContent;
   verifica("bollettino scritto", voci.length > 60, voci.slice(0, 50));
@@ -194,10 +205,16 @@ setTimeout(() => {
 
   console.log("\nPiù specie");
   const selettore = doc.getElementById("pir-prodotti");
+  const altra = dati.prodotti.find((p) => p.id === "orata") ? "orata" : null;
+  if (dati.prodotti.length < 2) {
+    console.log("  --    una sola specie con dati: controlli del selettore saltati");
+  } else {
   verifica("selettore visibile con dieci specie", !selettore.hidden && selettore.querySelectorAll("[data-prodotto]").length === dati.prodotti.length,
     selettore.querySelectorAll("[data-prodotto]").length + " voci");
   verifica("ogni voce mostra il prezzo", selettore.querySelectorAll(".pir-selettore-prezzo").length === dati.prodotti.length);
-  verifica("provenienze elencate negli arrivi", doc.querySelectorAll(".pir-provenienze li").length >= 2);
+  if (conFlussi) verifica("provenienze elencate negli arrivi", doc.querySelectorAll(".pir-provenienze li").length >= 2);
+  }
+  if (altra) {
   const bottoneOrata = selettore.querySelector('[data-prodotto="orata"]');
   bottoneOrata.dispatchEvent(new dom.window.Event("click"));
   verifica("cambio specie: titolo aggiornato", /Orata|sea bream/i.test(testo("pir-nome-prodotto")), testo("pir-nome-prodotto"));
@@ -210,11 +227,18 @@ setTimeout(() => {
     doc.querySelectorAll("#pir-sintesi-statica thead th").length + " colonne");
   selettore.querySelector('[data-prodotto="salmone"]').dispatchEvent(new dom.window.Event("click"));
   verifica("ritorno al salmone: bottone volume visibile", doc.querySelector('[data-misura="tonnellate"]').hidden === false);
+  } else if (dati.prodotti.length >= 2) {
+    console.log("  --    orata senza dati: controlli del cambio specie saltati");
+  }
 
   console.log("\nPanoramica, azioni, telefono");
+  if (dati.prodotti.length >= 2) {
   verifica("panoramica con una riga per specie", doc.querySelectorAll("#pir-tabella-panoramica tbody tr").length === dati.prodotti.length);
   verifica("posizione stagionale etichettata in panoramica", doc.querySelectorAll("#pir-tabella-panoramica .pir-posizione").length === dati.prodotti.length);
   verifica("select per il telefono con tutte le specie", doc.querySelectorAll("#pir-select-prodotto option").length === dati.prodotti.length);
+  } else {
+    console.log("  --    una sola specie: panoramica e menu del telefono non servono, controlli saltati");
+  }
   verifica("azioni sul grafico presenti", doc.getElementById("pir-scarica-grafico") !== null && doc.getElementById("pir-copia-link") !== null);
   doc.getElementById("pir-copia-link").dispatchEvent(new dom.window.Event("click"));
   verifica("copia link risponde", testo("pir-azioni-esito").length > 0, testo("pir-azioni-esito").slice(0, 40));
@@ -287,7 +311,11 @@ setTimeout(() => {
     verifica("prezzo disegnato anche alla riapertura", /\d/.test(d2.getElementById("pir-prezzo").textContent));
     verifica("grafico della stagione disegnato anche alla riapertura", d2.querySelectorAll("#pir-banda svg path").length >= 3);
     verifica("storico disegnato in vista completa", d2.querySelectorAll("#pir-storico svg").length === 1);
-    verifica("nota della redazione marcata sul grafico", d2.querySelectorAll("#pir-note-banda li").length >= 1 && d2.querySelectorAll("#pir-banda svg circle").length >= 2);
+    if ((prodotto.annotazioni || []).length) {
+      verifica("nota della redazione marcata sul grafico", d2.querySelectorAll("#pir-note-banda li").length >= 1 && d2.querySelectorAll("#pir-banda svg circle").length >= 2);
+    } else {
+      console.log("  --    nessuna nota della redazione: controllo saltato");
+    }
     verifica("riga 'dalla tua ultima visita' con la variazione", d2.getElementById("pir-ultima-visita").hidden === false && /%/.test(d2.getElementById("pir-ultima-visita").textContent), d2.getElementById("pir-ultima-visita").textContent);
     console.log(falliti === 0 ? "\nTutti i controlli superati." : "\n" + falliti + " controlli falliti.");
     process.exit(falliti === 0 ? 0 : 1);
