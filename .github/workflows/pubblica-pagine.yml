@@ -1,0 +1,54 @@
+name: Sorveglianza del ciclo
+
+# Parte da sola quando un'esecuzione del ciclo fallisce. Raccoglie il
+# registro, chiede al modello una diagnosi in italiano e, se c'è una
+# correzione sicura, la propone in una richiesta di modifica che la
+# redazione approva con un clic. Non tocca mai il ramo principale.
+#
+# Senza il segreto ANTHROPIC_API_KEY apre comunque una segnalazione con
+# l'estratto del registro.
+on:
+  workflow_run:
+    workflows: ["Aggiornamento dei dati", "Primo caricamento dei dati veri"]
+    types: [completed]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  actions: read
+
+jobs:
+  diagnosi:
+    if: github.event.workflow_run.conclusion == 'failure'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Dipendenze di collaudo
+        run: pip install pytest pillow -q
+
+      - name: Registro dell'esecuzione fallita
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run view ${{ github.event.workflow_run.id }} --log-failed > registro-fallito.txt 2>&1 || \
+          gh run view ${{ github.event.workflow_run.id }} --log > registro-fallito.txt 2>&1 || true
+          wc -l registro-fallito.txt
+
+      - name: Etichetta per le segnalazioni
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh label create sorveglianza --color F5C518 --description "Aperta dalla sorveglianza automatica" 2>/dev/null || true
+
+      - name: Diagnosi e proposta
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ github.token }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          MODELLO_AI: ${{ vars.MODELLO_AI }}
+        run: python strumenti/sorveglianza.py --registro registro-fallito.txt --esecuzione ${{ github.event.workflow_run.id }}
