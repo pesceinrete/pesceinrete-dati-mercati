@@ -1,0 +1,289 @@
+/* ==================================================================
+   Sistema di design — Dati e mercati
+
+   Carattere: Manrope (pesi 400/500/600/700/800).
+   Scala tipografica 1.25 su base 16: 12 · 13 · 15 · 16 · 20 · 25 · 32 · 40 · 72.
+   Scala degli spazi su 8 px: 8 · 12 · 16 · 24 · 32 · 40 · 56.
+   Palette IGB: navy #0F2D52, giallo #F5C518, bianco; grigi su una sola rampa.
+   Raggi: 16 (eroe) · 14 (schede) · 10 (riquadri interni) · 8 (comandi) · 999 (chip).
+   Il giallo ha due compiti e basta: il numero in evidenza e i pulsanti di richiamo.
+   ================================================================== */
+.pir-mercati{
+  /* Colori presi dai marchi: #1F8DCC è il blu del logo Pesceinrete e del
+     quadrato IGB; #003757 è il navy del menu di IGB; #E6F6FF il fondo
+     delle sue pagine; #0C679B la fascia alta. */
+  --navy:#003757; --navy-2:#0c679b; --navy-3:#002741;
+  --azzurro:#1f8dcc; --azzurro-2:#1878ad; --cielo:#e6f6ff;
+  --giallo:var(--azzurro); --giallo-2:var(--azzurro-2);   /* retrocompatibilità dei nomi */
+  --ink:#1e1e1e; --g700:#44536a; --g500:#6b7a90; --g400:#98a4b5; --g200:#dfe9f1; --g100:#eef5fa; --g050:var(--cielo);
+  --carta:#ffffff;
+  --ombra:0 1px 2px rgba(0,55,87,.06),0 10px 32px rgba(0,55,87,.08);
+
+  /* nomi usati dal resto del foglio e dagli script */
+  --accento:var(--navy); --accento-velo:var(--g100); --richiamo:var(--azzurro); --richiamo-testo:#ffffff;
+  --inchiostro:var(--ink); --secondario:var(--g500); --tenue:var(--g400); --riga:var(--g200); --riga-forte:#cfd6e0;
+  --avviso:#6b4f00; --avviso-velo:#fff4cc;
+
+  --manrope:"Manrope",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+  --testo:var(--manrope); --titoli:var(--manrope);
+
+  font-family:var(--testo); color:var(--ink); font-size:16px; line-height:1.55;
+  -webkit-font-smoothing:antialiased; background:var(--g050); padding:0 0 56px;
+  font-feature-settings:"ss01" 0; font-variant-numeric:tabular-nums;
+}
+.pir-mercati *,.pir-mercati *::before,.pir-mercati *::after{box-sizing:border-box}
+.pir-mercati h1,.pir-mercati h2,.pir-mercati h3,.pir-mercati p,.pir-mercati figure,.pir-mercati dl,.pir-mercati ul{margin:0}
+.pir-mercati h1,.pir-mercati h2,.pir-mercati h3{font-family:var(--titoli);font-weight:800;letter-spacing:-.015em;color:var(--navy)}
+.pir-mercati button{font-family:inherit;color:inherit}
+.pir-mercati :focus-visible{outline:3px solid var(--azzurro);outline-offset:2px;border-radius:8px}
+.pir-guscio{max-width:1040px;margin:0 auto;padding:0 20px}
+
+/* testata: solo nell'anteprima; dentro WordPress il titolo lo mette il tema */
+.pir-testata{padding:32px 0 8px}
+.pir-briciole{font-size:12px;color:var(--g400);letter-spacing:.06em;text-transform:uppercase;font-weight:700}
+.pir-briciole a{color:inherit;text-decoration:none}
+.pir-titolo-sezione{font-size:32px;line-height:1.15;margin:6px 0 0}
+.pir-occhiello,.pir-nav{display:none}
+
+/* ------------------------------------------------------------------
+   Testata bianca con il marchio Pesceinrete; la pagina su fondo cielo
+   come IGB; l'eroe navy come il menu di IGB.
+   ------------------------------------------------------------------ */
+.pir-testatina{display:flex;justify-content:space-between;align-items:center;gap:16px 32px;flex-wrap:wrap;
+  background:#fff;border-radius:12px;padding:16px 22px;margin:16px 0 0;border:1px solid var(--g200)}
+.pir-testatina a{display:block;line-height:0}
+.pir-logo-pesceinrete{height:34px;width:auto;display:block}
+.pir-testatina-destra{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.pir-marchio{font-size:13px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--navy);margin-right:4px}
+.pir-quando{font-size:13px;font-weight:600;color:var(--g500)}
+
+.pir-eroe{background:var(--navy);color:#fff;border-radius:12px;padding:28px 32px 24px;margin:16px 0 0;
+  position:relative;overflow:hidden}
+
+.pir-prodotti{display:flex;gap:8px;flex-wrap:wrap;margin:0}
+.pir-prodotti button,.pir-prodotti a{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.92);
+  border-radius:999px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;text-decoration:none;line-height:1.2;
+  transition:background .15s ease,color .15s ease}
+.pir-prodotti button:hover,.pir-prodotti a:hover{background:rgba(255,255,255,.22)}
+.pir-prodotti button[aria-pressed="true"],.pir-prodotti a[aria-current="page"]{background:var(--azzurro);color:#fff;border-color:var(--azzurro)}
+.pir-selettore-prezzo{margin-left:8px;font-weight:600;opacity:.8}
+.pir-scelta-mobile{display:none;margin:16px 0 0;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.7)}
+.pir-scelta-mobile select{display:block;width:100%;margin-top:6px;font:inherit;font-family:var(--testo);font-size:16px;font-weight:700;
+  letter-spacing:0;text-transform:none;color:var(--navy);background:#fff;border:0;border-radius:10px;padding:12px 14px}
+@media (max-width:560px){.pir-prodotti{display:none}.pir-scelta-mobile{display:block}}
+.pir-prodotti button[aria-pressed="true"] .pir-selettore-prezzo{opacity:.85}
+
+.pir-eroe-corpo{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:32px 40px;align-items:start;margin:28px 0 0}
+@media (max-width:860px){.pir-eroe-corpo{grid-template-columns:1fr;gap:24px}}
+
+.pir-mercati .pir-prodotto{font-size:40px;line-height:1.05;color:#fff;letter-spacing:-.025em}
+@media (max-width:560px){.pir-mercati .pir-prodotto{font-size:32px}.pir-prezzo{font-size:56px}}
+.pir-qualifica{font-size:14px;color:rgba(255,255,255,.85);margin:10px 0 0;max-width:40ch;line-height:1.5}
+.pir-firma{font-size:12px;color:rgba(255,255,255,.8);margin:20px 0 0;font-weight:600}
+.pir-prezzo{font-size:72px;line-height:1;font-weight:800;color:#fff;letter-spacing:-.03em;margin:22px 0 0}
+.pir-prezzo span{font-size:18px;color:rgba(255,255,255,.85);margin-left:8px;letter-spacing:0;font-weight:700}
+.pir-origine{font-size:13px;color:rgba(255,255,255,.85);margin:8px 0 0;font-weight:500}
+
+.pir-delta{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:20px 0 0}
+.pir-delta div{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px 12px;min-width:0}
+.pir-delta dt{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.82);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pir-delta dd{margin:4px 0 0;font-size:18px;font-weight:800;color:#fff}
+@media (max-width:420px){.pir-delta{grid-template-columns:1fr 1fr}}
+
+.pir-lede{font-size:17px;line-height:1.6;color:rgba(255,255,255,.92);margin:20px 0 0;font-weight:500;max-width:60ch}
+.pir-netto{font-size:13px;color:rgba(255,255,255,.88);margin:12px 0 0;line-height:1.5;max-width:60ch}
+.pir-netto b{color:#8fd0ff;font-weight:800}
+.pir-badge,.pir-settimana{display:none}
+
+.pir-eroe-grafico{background:var(--carta);border-radius:14px;padding:18px 20px 16px;color:var(--ink);box-shadow:var(--ombra)}
+.pir-eroe-grafico .pir-sopratitolo{font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--navy);margin:0 0 4px}
+.pir-eroe-grafico .pir-sottotitolo{font-size:13px;color:var(--g500);margin:0 0 10px}
+.pir-azioni{display:flex;gap:6px 14px;flex-wrap:wrap;align-items:center;margin:12px 0 0;padding-top:10px;border-top:1px solid var(--g200)}
+.pir-azioni button{background:none;border:0;padding:0;font-size:12px;font-weight:800;color:var(--navy);cursor:pointer;
+  text-decoration:underline;text-decoration-color:var(--g200);text-underline-offset:3px}
+.pir-azioni button:hover{text-decoration-color:var(--navy)}
+.pir-azioni-esito{font-size:12px;color:var(--g500);font-weight:600}
+.pir-scorri{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.pir-panoramica td:first-child a{color:var(--navy);text-decoration:none}
+.pir-panoramica td:first-child a:hover{text-decoration:underline}
+.pir-posizione{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+  padding:3px 8px;border-radius:999px;background:var(--g100);color:var(--g700)}
+.pir-posizione--alto{background:#fdecd9;color:#8a4a12}
+.pir-posizione--basso{background:#dcefe9;color:#1c6b52}
+
+/* le due viste: un controllo segmentato dentro l'eroe */
+.pir-schede{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:rgba(255,255,255,.1);border-radius:12px;padding:4px;margin:28px 0 0}
+.pir-schede button{background:transparent;border:0;border-radius:9px;padding:12px 16px;cursor:pointer;text-align:left;color:rgba(255,255,255,.8);
+  transition:background .15s ease,color .15s ease}
+.pir-schede button strong{display:block;font-size:14px;font-weight:800;letter-spacing:-.005em}
+.pir-schede button span{display:block;font-size:12px;margin-top:2px;opacity:.88;font-weight:500}
+.pir-schede button:hover{background:rgba(255,255,255,.08);color:#fff}
+.pir-schede button[aria-pressed="true"]{background:#fff;color:var(--navy)}
+.pir-schede button[aria-pressed="true"] span{opacity:.7}
+@media (max-width:560px){.pir-schede button span{display:none}.pir-schede button{padding:10px 12px}}
+.pir-vista{display:none}
+
+.pir-indice{display:none;gap:8px;flex-wrap:wrap;margin:16px 0 0}
+.pir-mercati[data-vista="completa"] .pir-indice{display:flex}
+.pir-indice a{font-size:13px;font-weight:700;color:var(--navy);text-decoration:none;background:var(--carta);border:1px solid var(--g200);
+  border-radius:999px;padding:7px 14px}
+.pir-indice a:hover{border-color:var(--navy)}
+.pir-mercati[data-vista="essenziale"] [data-livello="2"]{display:none}
+
+/* avviso dati dimostrativi */
+.pir-fascia{margin:16px 0 0;padding:12px 16px;background:var(--avviso-velo);color:var(--avviso);border-radius:10px;font-size:14px;
+  border:1px solid #f1dd8e}
+.pir-fascia strong{color:var(--navy)}
+
+/* ------------------------------------------------------------------
+   Le schede bianche
+   ------------------------------------------------------------------ */
+.pir-riquadro{background:var(--carta);border:1px solid var(--g200);border-radius:14px;padding:26px 28px 28px;margin:20px 0 0;box-shadow:var(--ombra)}
+@media (max-width:560px){.pir-riquadro{padding:20px 18px 22px;border-radius:12px}}
+.pir-riquadro>h2{font-size:25px;line-height:1.2;margin:0 0 6px}
+.pir-riquadro>h2 b{font-weight:inherit}
+.pir-riquadro h3{font-size:16px;font-weight:800;margin:0 0 4px}
+.pir-spiega{color:var(--g500);font-size:14px;margin:0 0 18px;max-width:72ch;line-height:1.55}
+.pir-riquadro--simulazione{border-style:dashed;border-color:var(--riga-forte)}
+.pir-sintesi .pir-lede{display:none}
+.pir-sintesi p{color:var(--g700);max-width:74ch;font-size:15px}
+
+/* grafici */
+.pir-figura{margin:0;position:relative}
+.pir-figura svg{display:block;width:100%;height:auto;overflow:visible}
+.pir-didascalia{font-size:12px;color:var(--g500);margin:10px 0 0;max-width:72ch;line-height:1.5}
+.pir-note-redazione{margin:10px 0 0;padding:0;list-style:none;font-size:12px;color:var(--g700)}
+.pir-note-redazione li{display:flex;gap:8px;align-items:baseline;padding:3px 0}
+.pir-note-redazione li::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--azzurro);border:1.5px solid var(--navy);flex:0 0 auto;transform:translateY(-1px)}
+.pir-note-redazione b{color:var(--navy);font-weight:800}
+.pir-ultima-visita{margin:10px 0 0;font-size:13px;color:rgba(255,255,255,.92);background:rgba(255,255,255,.08);
+  border-left:3px solid var(--azzurro);padding:8px 12px;border-radius:0 8px 8px 0;font-weight:500}
+.pir-lettura{position:absolute;pointer-events:none;background:var(--navy);color:#fff;font-size:12px;font-weight:700;
+  padding:6px 9px;border-radius:6px;white-space:nowrap;opacity:0;transform:translate(-50%,-140%)}
+.pir-lettura[data-visibile="1"]{opacity:1}
+
+/* comandi */
+.pir-comandi{display:flex;gap:10px 14px;flex-wrap:wrap;align-items:flex-end;margin:0 0 18px}
+.pir-gruppo{display:inline-flex;background:var(--g100);border-radius:9px;padding:3px;gap:2px}
+.pir-gruppo button{background:transparent;border:0;border-radius:7px;padding:7px 12px;font-size:13px;font-weight:700;color:var(--g700);cursor:pointer}
+.pir-gruppo button:hover{color:var(--navy)}
+.pir-gruppo button[aria-pressed="true"]{background:var(--azzurro);color:#fff}
+.pir-campo{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:700;color:var(--g500);letter-spacing:.02em}
+.pir-campo input,.pir-campo select{font:inherit;font-weight:600;font-size:14px;color:var(--ink);background:#fff;border:1px solid var(--g200);
+  border-radius:8px;padding:7px 10px}
+.pir-campo input:focus{border-color:var(--navy);outline:none}
+.pir-campo input[type=date]{min-width:9.5rem}
+.pir-bottone{background:#fff;color:var(--azzurro);border:1.5px solid var(--azzurro);border-radius:8px;padding:8px 14px;font-size:13px;font-weight:800;cursor:pointer}
+.pir-bottone:hover{background:var(--g100)}
+
+/* tabelle */
+.pir-tabella{width:100%;border-collapse:collapse;font-size:14px;margin:6px 0 0}
+.pir-tabella caption{text-align:left;font-size:12px;color:var(--g500);padding:0 0 10px;line-height:1.5}
+.pir-tabella th,.pir-tabella td{padding:10px 10px;border-bottom:1px solid var(--g200);text-align:right}
+.pir-tabella th:first-child,.pir-tabella td:first-child{text-align:left;font-weight:700;color:var(--navy)}
+.pir-tabella thead th{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--g500);border-bottom:2px solid var(--g200)}
+.pir-tabella tbody tr:hover td{background:var(--g050)}
+.pir-tabella tbody tr:last-child td{border-bottom:0}
+.pir-tabella .pir-forte{font-weight:800}
+.pir-nota{margin:12px 0 0;padding:10px 12px;background:var(--avviso-velo);color:var(--avviso);font-size:13px;border-radius:8px}
+
+/* calcolatore */
+.pir-calcolo{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,320px);gap:24px}
+@media (max-width:820px){.pir-calcolo{grid-template-columns:1fr}}
+.pir-parametri{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px}
+.pir-parametri--sopra{grid-template-columns:repeat(auto-fit,minmax(220px,1fr));margin-bottom:12px}
+.pir-campo select{font:inherit;font-weight:600;font-size:14px;color:var(--ink);background:#fff;border:1px solid var(--g200);border-radius:8px;padding:7px 10px}
+.pir-esito{background:var(--navy);color:#fff;border-radius:12px;padding:20px}
+.pir-esito-cifra{font-size:36px;line-height:1.05;font-weight:800;color:#fff;letter-spacing:-.02em}
+.pir-esito-cifra span{font-size:14px;color:rgba(255,255,255,.7);margin-left:6px;font-weight:700;letter-spacing:0}
+.pir-passi{list-style:none;padding:0;margin:14px 0 0;font-size:13px}
+.pir-passi li{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.92)}
+.pir-passi li:last-child{border-bottom:0;font-weight:800;color:#fff}
+
+/* dettagli, domande */
+.pir-dettaglio{border-top:1px solid var(--g200);padding-top:12px;margin-top:12px}
+.pir-dettaglio summary{cursor:pointer;font-weight:800;font-size:15px;list-style:none;color:var(--navy);display:flex;justify-content:space-between}
+.pir-dettaglio summary::-webkit-details-marker{display:none}
+.pir-dettaglio summary::after{content:"+";color:var(--g400);font-weight:800}
+.pir-dettaglio[open] summary::after{content:"–"}
+.pir-dettaglio .pir-corpo{font-size:14px;color:var(--g700);margin-top:10px;max-width:74ch;line-height:1.6}
+.pir-dettaglio .pir-corpo p{margin:0 0 8px}
+.pir-dettaglio dl{display:grid;grid-template-columns:minmax(0,170px) minmax(0,1fr);gap:6px 16px;font-size:14px}
+.pir-dettaglio dt{color:var(--g500);font-weight:700}.pir-dettaglio dd{margin:0}
+.pir-dettaglio a{color:var(--navy)}
+.pir-domande{margin:18px 0 0;font-size:14px;border-top:1px solid var(--g200);padding-top:14px;
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px 28px}
+@media (max-width:720px){.pir-domande{grid-template-columns:1fr}}
+.pir-domande dt{font-weight:800;color:var(--navy)}
+.pir-domande dd{margin:2px 0 0;color:var(--g700);line-height:1.55}
+
+/* arrivi */
+.pir-flussi{display:grid;grid-template-columns:minmax(0,280px) minmax(0,1fr);gap:24px 32px}
+@media (max-width:820px){.pir-flussi{grid-template-columns:1fr}}
+.pir-cifra{font-size:32px;line-height:1.05;font-weight:800;color:var(--navy);letter-spacing:-.02em}
+.pir-cifra span{font-size:14px;color:var(--g500);margin-left:6px;font-weight:700;letter-spacing:0}
+.pir-sotto-cifra{font-size:13px;color:var(--g500);margin:4px 0 0;line-height:1.5}
+.pir-quota{margin:16px 0 0;padding-top:12px;border-top:1px solid var(--g200);font-size:14px}
+.pir-etichetta-piccola{display:block;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--g500);margin-bottom:6px}
+.pir-provenienze{list-style:none;padding:0;margin:0}
+.pir-provenienze li{display:grid;grid-template-columns:1fr auto auto;gap:12px;padding:6px 0;border-bottom:1px solid var(--g200)}
+.pir-provenienze li:last-child{border-bottom:0}
+.pir-provenienze li span:first-child{font-weight:700;color:var(--navy)}
+.pir-provenienze li span:nth-child(2){font-weight:800}
+.pir-provenienze li span:nth-child(3){color:var(--g500)}
+
+/* bollettino */
+.pir-voce{padding:12px 0;border-bottom:1px solid var(--g200)}
+.pir-voce:last-child{border-bottom:0}
+.pir-voce h3{font-size:16px}
+.pir-voce p{font-size:14px;color:var(--g700);margin:4px 0 0;max-width:76ch;line-height:1.6}
+.pir-quiete{font-size:15px;color:var(--g700);max-width:74ch;line-height:1.6}
+
+/* invito e ponte IGB: due blocchi navy con il pulsante giallo */
+.pir-invito{margin:24px 0 0;padding:22px 24px;background:var(--navy);color:#fff;border-radius:12px;display:grid;
+  grid-template-columns:1fr auto;gap:16px 24px;align-items:center}
+@media (max-width:720px){.pir-invito{grid-template-columns:1fr}}
+.pir-invito p{margin:0;font-size:14px;max-width:60ch;color:rgba(255,255,255,.9);line-height:1.55}
+.pir-invito strong{display:block;color:#fff;font-size:16px;margin-bottom:2px;font-weight:800}
+.pir-mercati[data-vista="completa"] .pir-invito{display:none}
+.pir-invito .pir-bottone--pieno,.pir-igb a{background:var(--azzurro);color:#fff;border:0;border-radius:8px;padding:12px 20px;
+  font-weight:800;font-size:14px;letter-spacing:.01em;text-decoration:none;white-space:nowrap;cursor:pointer;
+  display:inline-block;text-align:center}
+.pir-invito .pir-bottone--pieno:hover,.pir-igb a:hover{background:var(--azzurro-2)}
+.pir-iscrizione{display:grid;grid-template-columns:1fr auto;gap:16px 24px;align-items:center;margin:20px 0 0;
+  background:var(--carta);border:1px solid var(--g200);border-left:6px solid var(--azzurro);border-radius:14px;padding:20px 24px;box-shadow:var(--ombra)}
+@media (max-width:720px){.pir-iscrizione{grid-template-columns:1fr}}
+.pir-iscrizione strong{display:block;color:var(--navy);font-size:17px;font-weight:800}
+.pir-iscrizione small{display:block;color:var(--g500);font-size:13px;margin-top:3px;max-width:52ch;line-height:1.5}
+.pir-iscrizione form{display:flex;gap:8px;flex-wrap:wrap}
+.pir-iscrizione input{font:inherit;font-size:14px;padding:10px 12px;border:1px solid var(--g200);border-radius:8px;min-width:220px}
+.pir-iscrizione input:focus{border-color:var(--navy);outline:none}
+.pir-iscrizione button{background:var(--azzurro);color:#fff;border:0;border-radius:8px;padding:10px 18px;font-weight:800;font-size:13px;
+  letter-spacing:.04em;text-transform:uppercase;cursor:pointer}
+.pir-igb{display:grid;grid-template-columns:auto 1fr auto;gap:16px 26px;align-items:center;margin:20px 0 0;
+  background:var(--navy);color:#fff;border-radius:14px;padding:22px 24px;box-shadow:var(--ombra)}
+@media (max-width:720px){.pir-igb{grid-template-columns:auto 1fr}.pir-igb a{grid-column:1/-1}}
+.pir-igb-logo img{height:44px;width:auto;display:block}
+.pir-igb-testo strong{display:block;color:#fff;font-size:17px;font-weight:800}
+.pir-igb-testo small{display:block;color:rgba(255,255,255,.86);font-size:13px;margin-top:3px;max-width:56ch;line-height:1.5}
+
+.pir-piede{margin:28px 0 0;padding:0 4px;font-size:12px;color:var(--g500);max-width:78ch;line-height:1.6}
+
+.pir-nascosto{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media print{
+  .pir-mercati{background:#fff;padding:0}
+  .pir-eroe{background:#fff;color:var(--ink);border:1px solid var(--g200);border-radius:0;padding:16px}
+  .pir-mercati .pir-prodotto,.pir-delta dd,.pir-lede{color:var(--ink)}
+  .pir-prezzo{color:var(--navy)}
+  .pir-qualifica,.pir-origine,.pir-firma,.pir-delta dt,.pir-quando{color:var(--g500)}
+  .pir-delta div{background:#fff;border-color:var(--g200)}
+  .pir-eroe-grafico{box-shadow:none;border:1px solid var(--g200)}
+  .pir-prodotti,.pir-scelta-mobile,.pir-schede,.pir-indice,.pir-azioni,.pir-comandi,.pir-invito,.pir-igb,.pir-fascia{display:none!important}
+  .pir-mercati [data-livello="2"]{display:block!important}
+  .pir-riquadro{box-shadow:none;break-inside:avoid}
+}
+@media (prefers-reduced-motion:no-preference){
+  .pir-anima{stroke-dasharray:var(--lunghezza);stroke-dashoffset:var(--lunghezza);
+    animation:pir-traccia 1100ms cubic-bezier(.25,.6,.3,1) forwards}
+  @keyframes pir-traccia{to{stroke-dashoffset:0}}
+}

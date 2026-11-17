@@ -1,0 +1,1707 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dati e mercati — Pesceinrete</title>
+<meta name="description" content="Prezzi, volumi e serie storiche dei principali prodotti ittici, con fonte, periodo e metodo dichiarati. Aggiornamento settimanale.">
+<style>
+/* ==================================================================
+   Sistema di design — Dati e mercati
+
+   Carattere: Manrope (pesi 400/500/600/700/800).
+   Scala tipografica 1.25 su base 16: 12 · 13 · 15 · 16 · 20 · 25 · 32 · 40 · 72.
+   Scala degli spazi su 8 px: 8 · 12 · 16 · 24 · 32 · 40 · 56.
+   Palette IGB: navy #0F2D52, giallo #F5C518, bianco; grigi su una sola rampa.
+   Raggi: 16 (eroe) · 14 (schede) · 10 (riquadri interni) · 8 (comandi) · 999 (chip).
+   Il giallo ha due compiti e basta: il numero in evidenza e i pulsanti di richiamo.
+   ================================================================== */
+.pir-mercati{
+  /* Colori presi dai marchi: #1F8DCC è il blu del logo Pesceinrete e del
+     quadrato IGB; #003757 è il navy del menu di IGB; #E6F6FF il fondo
+     delle sue pagine; #0C679B la fascia alta. */
+  --navy:#003757; --navy-2:#0c679b; --navy-3:#002741;
+  --azzurro:#1f8dcc; --azzurro-2:#1878ad; --cielo:#e6f6ff;
+  --giallo:var(--azzurro); --giallo-2:var(--azzurro-2);   /* retrocompatibilità dei nomi */
+  --ink:#1e1e1e; --g700:#44536a; --g500:#6b7a90; --g400:#98a4b5; --g200:#dfe9f1; --g100:#eef5fa; --g050:var(--cielo);
+  --carta:#ffffff;
+  --ombra:0 1px 2px rgba(0,55,87,.06),0 10px 32px rgba(0,55,87,.08);
+
+  /* nomi usati dal resto del foglio e dagli script */
+  --accento:var(--navy); --accento-velo:var(--g100); --richiamo:var(--azzurro); --richiamo-testo:#ffffff;
+  --inchiostro:var(--ink); --secondario:var(--g500); --tenue:var(--g400); --riga:var(--g200); --riga-forte:#cfd6e0;
+  --avviso:#6b4f00; --avviso-velo:#fff4cc;
+
+  --manrope:"Manrope",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+  --testo:var(--manrope); --titoli:var(--manrope);
+
+  font-family:var(--testo); color:var(--ink); font-size:16px; line-height:1.55;
+  -webkit-font-smoothing:antialiased; background:var(--g050); padding:0 0 56px;
+  font-feature-settings:"ss01" 0; font-variant-numeric:tabular-nums;
+}
+.pir-mercati *,.pir-mercati *::before,.pir-mercati *::after{box-sizing:border-box}
+.pir-mercati h1,.pir-mercati h2,.pir-mercati h3,.pir-mercati p,.pir-mercati figure,.pir-mercati dl,.pir-mercati ul{margin:0}
+.pir-mercati h1,.pir-mercati h2,.pir-mercati h3{font-family:var(--titoli);font-weight:800;letter-spacing:-.015em;color:var(--navy)}
+.pir-mercati button{font-family:inherit;color:inherit}
+.pir-mercati :focus-visible{outline:3px solid var(--azzurro);outline-offset:2px;border-radius:8px}
+.pir-guscio{max-width:1040px;margin:0 auto;padding:0 20px}
+
+/* testata: solo nell'anteprima; dentro WordPress il titolo lo mette il tema */
+.pir-testata{padding:32px 0 8px}
+.pir-briciole{font-size:12px;color:var(--g400);letter-spacing:.06em;text-transform:uppercase;font-weight:700}
+.pir-briciole a{color:inherit;text-decoration:none}
+.pir-titolo-sezione{font-size:32px;line-height:1.15;margin:6px 0 0}
+.pir-occhiello,.pir-nav{display:none}
+
+/* ------------------------------------------------------------------
+   Testata bianca con il marchio Pesceinrete; la pagina su fondo cielo
+   come IGB; l'eroe navy come il menu di IGB.
+   ------------------------------------------------------------------ */
+.pir-testatina{display:flex;justify-content:space-between;align-items:center;gap:16px 32px;flex-wrap:wrap;
+  background:#fff;border-radius:12px;padding:16px 22px;margin:16px 0 0;border:1px solid var(--g200)}
+.pir-testatina a{display:block;line-height:0}
+.pir-logo-pesceinrete{height:34px;width:auto;display:block}
+.pir-testatina-destra{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.pir-marchio{font-size:13px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--navy);margin-right:4px}
+.pir-quando{font-size:13px;font-weight:600;color:var(--g500)}
+
+.pir-eroe{background:var(--navy);color:#fff;border-radius:12px;padding:28px 32px 24px;margin:16px 0 0;
+  position:relative;overflow:hidden}
+
+.pir-prodotti{display:flex;gap:8px;flex-wrap:wrap;margin:0}
+.pir-prodotti button,.pir-prodotti a{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.92);
+  border-radius:999px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;text-decoration:none;line-height:1.2;
+  transition:background .15s ease,color .15s ease}
+.pir-prodotti button:hover,.pir-prodotti a:hover{background:rgba(255,255,255,.22)}
+.pir-prodotti button[aria-pressed="true"],.pir-prodotti a[aria-current="page"]{background:var(--azzurro);color:#fff;border-color:var(--azzurro)}
+.pir-selettore-prezzo{margin-left:8px;font-weight:600;opacity:.8}
+.pir-scelta-mobile{display:none;margin:16px 0 0;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.7)}
+.pir-scelta-mobile select{display:block;width:100%;margin-top:6px;font:inherit;font-family:var(--testo);font-size:16px;font-weight:700;
+  letter-spacing:0;text-transform:none;color:var(--navy);background:#fff;border:0;border-radius:10px;padding:12px 14px}
+@media (max-width:560px){.pir-prodotti{display:none}.pir-scelta-mobile{display:block}}
+.pir-prodotti button[aria-pressed="true"] .pir-selettore-prezzo{opacity:.85}
+
+.pir-eroe-corpo{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:32px 40px;align-items:start;margin:28px 0 0}
+@media (max-width:860px){.pir-eroe-corpo{grid-template-columns:1fr;gap:24px}}
+
+.pir-mercati .pir-prodotto{font-size:40px;line-height:1.05;color:#fff;letter-spacing:-.025em}
+@media (max-width:560px){.pir-mercati .pir-prodotto{font-size:32px}.pir-prezzo{font-size:56px}}
+.pir-qualifica{font-size:14px;color:rgba(255,255,255,.85);margin:10px 0 0;max-width:40ch;line-height:1.5}
+.pir-firma{font-size:12px;color:rgba(255,255,255,.8);margin:20px 0 0;font-weight:600}
+.pir-prezzo{font-size:72px;line-height:1;font-weight:800;color:#fff;letter-spacing:-.03em;margin:22px 0 0}
+.pir-prezzo span{font-size:18px;color:rgba(255,255,255,.85);margin-left:8px;letter-spacing:0;font-weight:700}
+.pir-origine{font-size:13px;color:rgba(255,255,255,.85);margin:8px 0 0;font-weight:500}
+
+.pir-delta{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:20px 0 0}
+.pir-delta div{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px 12px;min-width:0}
+.pir-delta dt{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.82);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pir-delta dd{margin:4px 0 0;font-size:18px;font-weight:800;color:#fff}
+@media (max-width:420px){.pir-delta{grid-template-columns:1fr 1fr}}
+
+.pir-lede{font-size:17px;line-height:1.6;color:rgba(255,255,255,.92);margin:20px 0 0;font-weight:500;max-width:60ch}
+.pir-netto{font-size:13px;color:rgba(255,255,255,.88);margin:12px 0 0;line-height:1.5;max-width:60ch}
+.pir-netto b{color:#8fd0ff;font-weight:800}
+.pir-badge,.pir-settimana{display:none}
+
+.pir-eroe-grafico{background:var(--carta);border-radius:14px;padding:18px 20px 16px;color:var(--ink);box-shadow:var(--ombra)}
+.pir-eroe-grafico .pir-sopratitolo{font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--navy);margin:0 0 4px}
+.pir-eroe-grafico .pir-sottotitolo{font-size:13px;color:var(--g500);margin:0 0 10px}
+.pir-azioni{display:flex;gap:6px 14px;flex-wrap:wrap;align-items:center;margin:12px 0 0;padding-top:10px;border-top:1px solid var(--g200)}
+.pir-azioni button{background:none;border:0;padding:0;font-size:12px;font-weight:800;color:var(--navy);cursor:pointer;
+  text-decoration:underline;text-decoration-color:var(--g200);text-underline-offset:3px}
+.pir-azioni button:hover{text-decoration-color:var(--navy)}
+.pir-azioni-esito{font-size:12px;color:var(--g500);font-weight:600}
+.pir-scorri{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.pir-panoramica td:first-child a{color:var(--navy);text-decoration:none}
+.pir-panoramica td:first-child a:hover{text-decoration:underline}
+.pir-posizione{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+  padding:3px 8px;border-radius:999px;background:var(--g100);color:var(--g700)}
+.pir-posizione--alto{background:#fdecd9;color:#8a4a12}
+.pir-posizione--basso{background:#dcefe9;color:#1c6b52}
+
+/* le due viste: un controllo segmentato dentro l'eroe */
+.pir-schede{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:rgba(255,255,255,.1);border-radius:12px;padding:4px;margin:28px 0 0}
+.pir-schede button{background:transparent;border:0;border-radius:9px;padding:12px 16px;cursor:pointer;text-align:left;color:rgba(255,255,255,.8);
+  transition:background .15s ease,color .15s ease}
+.pir-schede button strong{display:block;font-size:14px;font-weight:800;letter-spacing:-.005em}
+.pir-schede button span{display:block;font-size:12px;margin-top:2px;opacity:.88;font-weight:500}
+.pir-schede button:hover{background:rgba(255,255,255,.08);color:#fff}
+.pir-schede button[aria-pressed="true"]{background:#fff;color:var(--navy)}
+.pir-schede button[aria-pressed="true"] span{opacity:.7}
+@media (max-width:560px){.pir-schede button span{display:none}.pir-schede button{padding:10px 12px}}
+.pir-vista{display:none}
+
+.pir-indice{display:none;gap:8px;flex-wrap:wrap;margin:16px 0 0}
+.pir-mercati[data-vista="completa"] .pir-indice{display:flex}
+.pir-indice a{font-size:13px;font-weight:700;color:var(--navy);text-decoration:none;background:var(--carta);border:1px solid var(--g200);
+  border-radius:999px;padding:7px 14px}
+.pir-indice a:hover{border-color:var(--navy)}
+.pir-mercati[data-vista="essenziale"] [data-livello="2"]{display:none}
+
+/* avviso dati dimostrativi */
+.pir-fascia{margin:16px 0 0;padding:12px 16px;background:var(--avviso-velo);color:var(--avviso);border-radius:10px;font-size:14px;
+  border:1px solid #f1dd8e}
+.pir-fascia strong{color:var(--navy)}
+
+/* ------------------------------------------------------------------
+   Le schede bianche
+   ------------------------------------------------------------------ */
+.pir-riquadro{background:var(--carta);border:1px solid var(--g200);border-radius:14px;padding:26px 28px 28px;margin:20px 0 0;box-shadow:var(--ombra)}
+@media (max-width:560px){.pir-riquadro{padding:20px 18px 22px;border-radius:12px}}
+.pir-riquadro>h2{font-size:25px;line-height:1.2;margin:0 0 6px}
+.pir-riquadro>h2 b{font-weight:inherit}
+.pir-riquadro h3{font-size:16px;font-weight:800;margin:0 0 4px}
+.pir-spiega{color:var(--g500);font-size:14px;margin:0 0 18px;max-width:72ch;line-height:1.55}
+.pir-riquadro--simulazione{border-style:dashed;border-color:var(--riga-forte)}
+.pir-sintesi .pir-lede{display:none}
+.pir-sintesi p{color:var(--g700);max-width:74ch;font-size:15px}
+
+/* grafici */
+.pir-figura{margin:0;position:relative}
+.pir-figura svg{display:block;width:100%;height:auto;overflow:visible}
+.pir-didascalia{font-size:12px;color:var(--g500);margin:10px 0 0;max-width:72ch;line-height:1.5}
+.pir-note-redazione{margin:10px 0 0;padding:0;list-style:none;font-size:12px;color:var(--g700)}
+.pir-note-redazione li{display:flex;gap:8px;align-items:baseline;padding:3px 0}
+.pir-note-redazione li::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--azzurro);border:1.5px solid var(--navy);flex:0 0 auto;transform:translateY(-1px)}
+.pir-note-redazione b{color:var(--navy);font-weight:800}
+.pir-ultima-visita{margin:10px 0 0;font-size:13px;color:rgba(255,255,255,.92);background:rgba(255,255,255,.08);
+  border-left:3px solid var(--azzurro);padding:8px 12px;border-radius:0 8px 8px 0;font-weight:500}
+.pir-lettura{position:absolute;pointer-events:none;background:var(--navy);color:#fff;font-size:12px;font-weight:700;
+  padding:6px 9px;border-radius:6px;white-space:nowrap;opacity:0;transform:translate(-50%,-140%)}
+.pir-lettura[data-visibile="1"]{opacity:1}
+
+/* comandi */
+.pir-comandi{display:flex;gap:10px 14px;flex-wrap:wrap;align-items:flex-end;margin:0 0 18px}
+.pir-gruppo{display:inline-flex;background:var(--g100);border-radius:9px;padding:3px;gap:2px}
+.pir-gruppo button{background:transparent;border:0;border-radius:7px;padding:7px 12px;font-size:13px;font-weight:700;color:var(--g700);cursor:pointer}
+.pir-gruppo button:hover{color:var(--navy)}
+.pir-gruppo button[aria-pressed="true"]{background:var(--azzurro);color:#fff}
+.pir-campo{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:700;color:var(--g500);letter-spacing:.02em}
+.pir-campo input,.pir-campo select{font:inherit;font-weight:600;font-size:14px;color:var(--ink);background:#fff;border:1px solid var(--g200);
+  border-radius:8px;padding:7px 10px}
+.pir-campo input:focus{border-color:var(--navy);outline:none}
+.pir-campo input[type=date]{min-width:9.5rem}
+.pir-bottone{background:#fff;color:var(--azzurro);border:1.5px solid var(--azzurro);border-radius:8px;padding:8px 14px;font-size:13px;font-weight:800;cursor:pointer}
+.pir-bottone:hover{background:var(--g100)}
+
+/* tabelle */
+.pir-tabella{width:100%;border-collapse:collapse;font-size:14px;margin:6px 0 0}
+.pir-tabella caption{text-align:left;font-size:12px;color:var(--g500);padding:0 0 10px;line-height:1.5}
+.pir-tabella th,.pir-tabella td{padding:10px 10px;border-bottom:1px solid var(--g200);text-align:right}
+.pir-tabella th:first-child,.pir-tabella td:first-child{text-align:left;font-weight:700;color:var(--navy)}
+.pir-tabella thead th{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--g500);border-bottom:2px solid var(--g200)}
+.pir-tabella tbody tr:hover td{background:var(--g050)}
+.pir-tabella tbody tr:last-child td{border-bottom:0}
+.pir-tabella .pir-forte{font-weight:800}
+.pir-nota{margin:12px 0 0;padding:10px 12px;background:var(--avviso-velo);color:var(--avviso);font-size:13px;border-radius:8px}
+
+/* calcolatore */
+.pir-calcolo{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,320px);gap:24px}
+@media (max-width:820px){.pir-calcolo{grid-template-columns:1fr}}
+.pir-parametri{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px}
+.pir-parametri--sopra{grid-template-columns:repeat(auto-fit,minmax(220px,1fr));margin-bottom:12px}
+.pir-campo select{font:inherit;font-weight:600;font-size:14px;color:var(--ink);background:#fff;border:1px solid var(--g200);border-radius:8px;padding:7px 10px}
+.pir-esito{background:var(--navy);color:#fff;border-radius:12px;padding:20px}
+.pir-esito-cifra{font-size:36px;line-height:1.05;font-weight:800;color:#fff;letter-spacing:-.02em}
+.pir-esito-cifra span{font-size:14px;color:rgba(255,255,255,.7);margin-left:6px;font-weight:700;letter-spacing:0}
+.pir-passi{list-style:none;padding:0;margin:14px 0 0;font-size:13px}
+.pir-passi li{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.92)}
+.pir-passi li:last-child{border-bottom:0;font-weight:800;color:#fff}
+
+/* dettagli, domande */
+.pir-dettaglio{border-top:1px solid var(--g200);padding-top:12px;margin-top:12px}
+.pir-dettaglio summary{cursor:pointer;font-weight:800;font-size:15px;list-style:none;color:var(--navy);display:flex;justify-content:space-between}
+.pir-dettaglio summary::-webkit-details-marker{display:none}
+.pir-dettaglio summary::after{content:"+";color:var(--g400);font-weight:800}
+.pir-dettaglio[open] summary::after{content:"–"}
+.pir-dettaglio .pir-corpo{font-size:14px;color:var(--g700);margin-top:10px;max-width:74ch;line-height:1.6}
+.pir-dettaglio .pir-corpo p{margin:0 0 8px}
+.pir-dettaglio dl{display:grid;grid-template-columns:minmax(0,170px) minmax(0,1fr);gap:6px 16px;font-size:14px}
+.pir-dettaglio dt{color:var(--g500);font-weight:700}.pir-dettaglio dd{margin:0}
+.pir-dettaglio a{color:var(--navy)}
+.pir-domande{margin:18px 0 0;font-size:14px;border-top:1px solid var(--g200);padding-top:14px;
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px 28px}
+@media (max-width:720px){.pir-domande{grid-template-columns:1fr}}
+.pir-domande dt{font-weight:800;color:var(--navy)}
+.pir-domande dd{margin:2px 0 0;color:var(--g700);line-height:1.55}
+
+/* arrivi */
+.pir-flussi{display:grid;grid-template-columns:minmax(0,280px) minmax(0,1fr);gap:24px 32px}
+@media (max-width:820px){.pir-flussi{grid-template-columns:1fr}}
+.pir-cifra{font-size:32px;line-height:1.05;font-weight:800;color:var(--navy);letter-spacing:-.02em}
+.pir-cifra span{font-size:14px;color:var(--g500);margin-left:6px;font-weight:700;letter-spacing:0}
+.pir-sotto-cifra{font-size:13px;color:var(--g500);margin:4px 0 0;line-height:1.5}
+.pir-quota{margin:16px 0 0;padding-top:12px;border-top:1px solid var(--g200);font-size:14px}
+.pir-etichetta-piccola{display:block;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--g500);margin-bottom:6px}
+.pir-provenienze{list-style:none;padding:0;margin:0}
+.pir-provenienze li{display:grid;grid-template-columns:1fr auto auto;gap:12px;padding:6px 0;border-bottom:1px solid var(--g200)}
+.pir-provenienze li:last-child{border-bottom:0}
+.pir-provenienze li span:first-child{font-weight:700;color:var(--navy)}
+.pir-provenienze li span:nth-child(2){font-weight:800}
+.pir-provenienze li span:nth-child(3){color:var(--g500)}
+
+/* bollettino */
+.pir-voce{padding:12px 0;border-bottom:1px solid var(--g200)}
+.pir-voce:last-child{border-bottom:0}
+.pir-voce h3{font-size:16px}
+.pir-voce p{font-size:14px;color:var(--g700);margin:4px 0 0;max-width:76ch;line-height:1.6}
+.pir-quiete{font-size:15px;color:var(--g700);max-width:74ch;line-height:1.6}
+
+/* invito e ponte IGB: due blocchi navy con il pulsante giallo */
+.pir-invito{margin:24px 0 0;padding:22px 24px;background:var(--navy);color:#fff;border-radius:12px;display:grid;
+  grid-template-columns:1fr auto;gap:16px 24px;align-items:center}
+@media (max-width:720px){.pir-invito{grid-template-columns:1fr}}
+.pir-invito p{margin:0;font-size:14px;max-width:60ch;color:rgba(255,255,255,.9);line-height:1.55}
+.pir-invito strong{display:block;color:#fff;font-size:16px;margin-bottom:2px;font-weight:800}
+.pir-mercati[data-vista="completa"] .pir-invito{display:none}
+.pir-invito .pir-bottone--pieno,.pir-igb a{background:var(--azzurro);color:#fff;border:0;border-radius:8px;padding:12px 20px;
+  font-weight:800;font-size:14px;letter-spacing:.01em;text-decoration:none;white-space:nowrap;cursor:pointer;
+  display:inline-block;text-align:center}
+.pir-invito .pir-bottone--pieno:hover,.pir-igb a:hover{background:var(--azzurro-2)}
+.pir-iscrizione{display:grid;grid-template-columns:1fr auto;gap:16px 24px;align-items:center;margin:20px 0 0;
+  background:var(--carta);border:1px solid var(--g200);border-left:6px solid var(--azzurro);border-radius:14px;padding:20px 24px;box-shadow:var(--ombra)}
+@media (max-width:720px){.pir-iscrizione{grid-template-columns:1fr}}
+.pir-iscrizione strong{display:block;color:var(--navy);font-size:17px;font-weight:800}
+.pir-iscrizione small{display:block;color:var(--g500);font-size:13px;margin-top:3px;max-width:52ch;line-height:1.5}
+.pir-iscrizione form{display:flex;gap:8px;flex-wrap:wrap}
+.pir-iscrizione input{font:inherit;font-size:14px;padding:10px 12px;border:1px solid var(--g200);border-radius:8px;min-width:220px}
+.pir-iscrizione input:focus{border-color:var(--navy);outline:none}
+.pir-iscrizione button{background:var(--azzurro);color:#fff;border:0;border-radius:8px;padding:10px 18px;font-weight:800;font-size:13px;
+  letter-spacing:.04em;text-transform:uppercase;cursor:pointer}
+.pir-igb{display:grid;grid-template-columns:auto 1fr auto;gap:16px 26px;align-items:center;margin:20px 0 0;
+  background:var(--navy);color:#fff;border-radius:14px;padding:22px 24px;box-shadow:var(--ombra)}
+@media (max-width:720px){.pir-igb{grid-template-columns:auto 1fr}.pir-igb a{grid-column:1/-1}}
+.pir-igb-logo img{height:44px;width:auto;display:block}
+.pir-igb-testo strong{display:block;color:#fff;font-size:17px;font-weight:800}
+.pir-igb-testo small{display:block;color:rgba(255,255,255,.86);font-size:13px;margin-top:3px;max-width:56ch;line-height:1.5}
+
+.pir-piede{margin:28px 0 0;padding:0 4px;font-size:12px;color:var(--g500);max-width:78ch;line-height:1.6}
+
+.pir-nascosto{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media print{
+  .pir-mercati{background:#fff;padding:0}
+  .pir-eroe{background:#fff;color:var(--ink);border:1px solid var(--g200);border-radius:0;padding:16px}
+  .pir-mercati .pir-prodotto,.pir-delta dd,.pir-lede{color:var(--ink)}
+  .pir-prezzo{color:var(--navy)}
+  .pir-qualifica,.pir-origine,.pir-firma,.pir-delta dt,.pir-quando{color:var(--g500)}
+  .pir-delta div{background:#fff;border-color:var(--g200)}
+  .pir-eroe-grafico{box-shadow:none;border:1px solid var(--g200)}
+  .pir-prodotti,.pir-scelta-mobile,.pir-schede,.pir-indice,.pir-azioni,.pir-comandi,.pir-invito,.pir-igb,.pir-fascia{display:none!important}
+  .pir-mercati [data-livello="2"]{display:block!important}
+  .pir-riquadro{box-shadow:none;break-inside:avoid}
+}
+@media (prefers-reduced-motion:no-preference){
+  .pir-anima{stroke-dasharray:var(--lunghezza);stroke-dashoffset:var(--lunghezza);
+    animation:pir-traccia 1100ms cubic-bezier(.25,.6,.3,1) forwards}
+  @keyframes pir-traccia{to{stroke-dashoffset:0}}
+}
+</style>
+</head>
+<body>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
+<div class="pir-mercati" data-vista="essenziale">
+  <div class="pir-guscio">
+
+    <header class="pir-testata" data-solo-anteprima>
+      <nav class="pir-briciole" aria-label="Percorso">
+        <a href="/">Pesceinrete</a> / <a href="/category/mercati/">Mercati</a> / Dati e mercati
+      </nav>
+      <h1 class="pir-titolo-sezione">Dati e mercati</h1>
+      <p class="pir-occhiello">Prezzi e volumi delle materie prime ittiche, con fonte, periodo e metodo
+        dichiarati accanto a ogni numero. Aggiornamento il giovedi mattina.</p>
+      <nav class="pir-nav" aria-label="Sezione">
+        <a href="#scheda" aria-current="page">Scheda prodotto</a>
+        <a href="#flussi">Arrivi in Italia</a>
+        <a href="#bollettino">La settimana</a>
+        <a href="#confronto">Confronto periodi</a>
+        <a href="#costo">Costo a destino</a>
+        <a href="#metodo">Fonti e metodo</a>
+      </nav>
+    </header>
+
+    <div class="pir-testatina">
+      <a href="/" aria-label="Pesceinrete" data-solo-anteprima><svg class="pir-logo-pesceinrete" role="img" aria-label="Pesceinrete" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="0 0 310 61.3"><g><path fill="#1E1E1E" d="M4.1,1h23.3h31.9v32v5.4c-6.8,0.1-13-0.4-18.8-1.4c-0.1-0.6-0.3-1.1-0.4-1.6c-2.4-8.9-6.4-16.2-11.7-21.6   c-3.4-3.6-7.4-6.3-11.9-8.2C12.2,4.1,7.4,3.2,2.2,3.2H2l0,0l0,0v0.2c0,5.2,0.9,10,2.6,14.4s4.5,8.5,8.1,11.9   c5.4,5.2,12.7,9.2,21.6,11.7c0.5,0.1,1.1,0.3,1.6,0.4c1.1,5.6,1.5,11.9,1.4,18.7h-7H0V30V5.1V1C0,1,4.1,1,4.1,1z"></path><g><path fill="#1F8DCC" d="M59.3,50.3l-10,10.1h-6.1c0-6.2-0.4-12.1-1.4-17.4c5.4,1,11.3,1.4,17.5,1.4V50.3z"></path><path fill="#1F8DCC" d="M24.9,17.4c4.4,4.5,7.7,10.7,9.7,18.4c-7.7-2.1-13.9-5.3-18.4-9.7c-4.6-4.5-7.3-10.1-8.1-16.8    C14.8,10,20.4,12.7,24.9,17.4z"></path></g><g><path fill="#1E1E1E" d="M63.7,43V1.2h9c1.7,0,3.1,0.2,4.4,0.7c1.3,0.4,2.4,1.2,3.4,2.3c1,1.1,1.7,2.4,2.1,3.9    c0.4,1.5,0.6,3.5,0.6,5.9c0,1.8-0.1,3.5-0.3,4.8c-0.2,1.3-0.7,2.5-1.4,3.7c-0.8,1.4-1.9,2.4-3.3,3.2s-3.2,1.2-5.4,1.2h-3v16.3    h-6.1V43z M69.7,6.9v14.2h2.9c1.2,0,2.1-0.2,2.8-0.5c0.7-0.4,1.2-0.9,1.5-1.5s0.5-1.4,0.6-2.1c0.1-0.9,0.1-1.8,0.1-2.9    c0-1,0-1.9-0.1-2.8c0-0.9-0.2-1.7-0.5-2.3s-0.8-1.2-1.5-1.6C75,7,74,6.9,72.8,6.9C72.8,6.9,69.7,6.9,69.7,6.9z"></path><path fill="#1E1E1E" d="M87.7,43V1.2h17.9v5.6h-12v12.2H104v5.6H93.6V37h11.9v6C105.5,43,87.7,43,87.7,43z"></path><path fill="#1E1E1E" d="M128.8,13.3h-6v-1.4c0-1.4-0.3-2.5-1-3.6c-0.7-1-1.7-1.5-3.3-1.5c-0.8,0-1.5,0.2-2,0.5    c-0.5,0.3-0.9,0.7-1.3,1.2c-0.3,0.5-0.5,1.1-0.7,1.7c-0.1,0.7-0.2,1.4-0.2,2c0,0.8,0,1.6,0.1,2c0.1,0.6,0.2,1.1,0.5,1.5    c0.2,0.4,0.6,0.8,1.1,1.1c0.5,0.3,1.1,0.6,1.8,1l4.6,1.8c1.4,0.5,2.4,1.1,3.2,1.7c0.8,0.7,1.5,1.5,1.9,2.4c0.4,1,0.7,2,0.9,3.2    c0.2,1.2,0.2,2.5,0.2,4.1c0,1.7-0.2,3.4-0.5,5c-0.4,1.6-0.9,2.8-1.7,3.9c-0.8,1.1-1.9,1.9-3.2,2.6c-1.4,0.6-2.9,1-4.9,1    c-1.5,0-2.8-0.3-4.1-0.8c-1.3-0.5-2.3-1.2-3.2-2.1c-0.9-0.9-1.7-1.9-2.1-3.1s-0.8-2.5-0.8-3.9v-2.2h6v1.8c0,1.1,0.3,2,1,3    c0.7,0.9,1.7,1.4,3.3,1.4c1,0,1.8-0.2,2.4-0.5s1-0.7,1.4-1.3c0.3-0.6,0.5-1.2,0.6-1.9s0.1-1.7,0.1-2.5c0-1.1,0-2-0.1-2.7    c-0.1-0.7-0.2-1.3-0.5-1.7c-0.3-0.4-0.7-0.8-1.1-1.1c-0.5-0.3-1.1-0.6-1.7-0.9l-4.3-1.7c-2.6-1.1-4.3-2.4-5.2-4.2    c-0.9-1.7-1.4-3.9-1.4-6.5c0-1.6,0.2-3,0.7-4.5c0.4-1.5,1.1-2.6,1.9-3.7c0.8-1,1.8-1.8,3.1-2.4c1.3-0.6,2.8-0.9,4.6-0.9    c1.5,0,2.8,0.3,4.1,0.8c1.3,0.6,2.3,1.3,3.2,2.1c1.8,1.8,2.7,4.1,2.7,6.5L128.8,13.3L128.8,13.3z"></path><path fill="#1E1E1E" d="M152.3,31.2v2.6c0,1.3-0.3,2.5-0.8,3.7c-0.5,1.2-1.2,2.1-2,3.1c-0.9,0.9-1.8,1.7-3,2.1    c-1.2,0.5-2.4,0.8-3.7,0.8c-1.2,0-2.3-0.2-3.5-0.5c-1.2-0.3-2.2-0.9-3.2-1.7s-1.7-1.7-2.3-3c-0.6-1.3-0.9-2.8-0.9-4.8V10.5    c0-1.4,0.2-2.6,0.7-3.8c0.5-1.2,1.2-2.2,2-3c0.9-0.9,1.8-1.6,3.1-2c1.2-0.5,2.5-0.8,4-0.8c2.8,0,5.2,0.9,6.9,2.7    c0.9,0.9,1.6,1.9,2,3.2c0.5,1.3,0.8,2.6,0.8,4v2.3h-6v-2c0-1.2-0.3-2.2-1-3c-0.7-0.9-1.6-1.3-2.7-1.3c-1.5,0-2.5,0.5-3,1.4    c-0.5,0.9-0.8,2-0.8,3.5V33c0,1.3,0.3,2.2,0.8,3c0.5,0.8,1.5,1.3,2.8,1.3c0.4,0,0.8-0.1,1.3-0.2c0.5-0.1,0.9-0.4,1.3-0.7    c0.4-0.3,0.7-0.8,0.9-1.3c0.2-0.6,0.4-1.3,0.4-2v-2L152.3,31.2L152.3,31.2z"></path><path fill="#1E1E1E" d="M157.2,43V1.2h17.9v5.6h-11.9v12.2h10.3v5.6h-10.3V37h11.9v6C175.1,43,157.2,43,157.2,43z"></path><path fill="#1F8DCC" d="M179.2,43V1.2h6v41.9L179.2,43L179.2,43z"></path><path fill="#1F8DCC" d="M190.7,43V1.2h5.7l9,25.3h0.1V1.2h6v41.9h-5.5L197,18h-0.1v25.2L190.7,43L190.7,43z"></path><path fill="#1E1E1E" d="M217.1,43V1.2h9.6c7.1,0,10.6,4.1,10.6,12.2c0,2.4-0.4,4.6-1.2,6.3c-0.8,1.7-2.1,3.1-4,4.2l6.5,19.2h-6.3    l-5.5-17.9h-3.6v17.9L217.1,43L217.1,43z M223.1,6.9v13h3.4c1.1,0,1.9-0.2,2.5-0.5s1.1-0.7,1.5-1.3c0.3-0.6,0.5-1.3,0.7-2    c0.1-0.8,0.2-1.7,0.2-2.8s-0.1-1.9-0.2-2.8c-0.1-0.8-0.4-1.5-0.7-2c-0.8-1.1-2.1-1.7-4.3-1.7L223.1,6.9L223.1,6.9z"></path><path fill="#1E1E1E" d="M242.2,43V1.2h17.9v5.6h-11.9v12.2h10.3v5.6h-10.3V37h11.9v6C260.1,43,242.2,43,242.2,43z"></path><path fill="#1E1E1E" d="M267.8,43V6.9h-6.9V1.2h19.9v5.6H274v36.3L267.8,43L267.8,43z"></path><path fill="#1E1E1E" d="M283.5,43V1.2h17.9v5.6h-11.9v12.2h10.3v5.6h-10.3V37h11.9v6C301.4,43,283.5,43,283.5,43z"></path></g><g><g><path fill="#1E1E1E" d="M63.6,49.2v-1.4h1.4v1.4H63.6z M63.6,57.5v-7h1.4v7H63.6z"></path><path fill="#1E1E1E" d="M69.8,47.7h1.4v7.9c0,0.3,0,0.5,0.1,0.6s0.3,0.2,0.6,0.2v1.4c-0.3,0-0.6,0-0.9-0.1s-0.5-0.2-0.7-0.3     S70,57,69.9,56.8s-0.1-0.6-0.1-1V47.7z"></path><path fill="#1E1E1E" d="M85.3,60.4v-3.5l0,0c-0.2,0.2-0.4,0.4-0.6,0.5s-0.5,0.2-0.8,0.2c-0.4,0-0.6-0.1-0.8-0.2     c-0.2-0.1-0.4-0.3-0.5-0.5s-0.2-0.3-0.2-0.6c0-0.2,0-0.6,0-1.1v-2.6c0-0.4,0-0.7,0.1-1c0-0.2,0.1-0.4,0.2-0.6     c0.2-0.5,0.7-0.7,1.3-0.7c0.2,0,0.3,0,0.5,0.1c0.1,0,0.3,0.1,0.4,0.2c0.1,0.1,0.2,0.1,0.3,0.2c0.1,0.1,0.2,0.2,0.3,0.3v-0.7h1.4     v9.8L85.3,60.4L85.3,60.4z M83.9,55.4c0,0.2,0,0.4,0.1,0.6c0.1,0.2,0.3,0.3,0.6,0.3c0.2,0,0.4-0.1,0.5-0.2     c0.1-0.1,0.2-0.3,0.2-0.6v-2.7c0-0.3-0.1-0.5-0.2-0.6C85,52,84.8,52,84.6,52s-0.4,0.1-0.5,0.3s-0.2,0.4-0.2,0.7V55.4z"></path><path fill="#1E1E1E" d="M95.8,50.6v7h-1.5v-0.7l0,0c-0.2,0.2-0.3,0.4-0.5,0.6c-0.2,0.1-0.5,0.2-0.8,0.2c-0.2,0-0.4,0-0.5-0.1     c-0.2-0.1-0.3-0.2-0.5-0.3s-0.3-0.3-0.3-0.5c-0.1-0.2-0.1-0.5-0.1-0.8v-5.3H93v4.9c0,0.3,0.1,0.5,0.2,0.6     c0.1,0.2,0.3,0.2,0.5,0.2c0.3,0,0.5-0.1,0.6-0.3c0-0.2,0-0.5,0-0.8v-4.7H95.8z"></path><path fill="#1E1E1E" d="M100.5,53c0-0.3,0-0.6,0.1-0.8c0-0.2,0.1-0.5,0.2-0.7c0.2-0.3,0.4-0.6,0.7-0.8c0.3-0.2,0.7-0.3,1.2-0.3     s0.8,0.1,1.2,0.3c0.3,0.2,0.6,0.4,0.7,0.8c0.1,0.2,0.2,0.4,0.2,0.7s0.1,0.5,0.1,0.8v2.3c0,0.3,0,0.6-0.1,0.8s-0.1,0.5-0.2,0.7     c-0.2,0.3-0.4,0.6-0.7,0.8c-0.3,0.2-0.7,0.3-1.2,0.3s-0.8-0.1-1.2-0.3c-0.3-0.2-0.6-0.4-0.7-0.8c-0.1-0.2-0.2-0.4-0.2-0.7     c0-0.2-0.1-0.5-0.1-0.8V53z M101.9,55.5c0,0.3,0.1,0.5,0.2,0.6s0.3,0.2,0.5,0.2s0.4-0.1,0.5-0.2c0.1-0.1,0.2-0.3,0.2-0.6v-2.7     c0-0.3-0.1-0.5-0.2-0.6s-0.3-0.2-0.5-0.2s-0.4,0.1-0.5,0.2c-0.1,0.1-0.2,0.3-0.2,0.6V55.5z"></path><path fill="#1E1E1E" d="M109.4,50.6v-2.1h1.4v2.1h0.9v1.1h-0.8v3.9c0,0.2,0,0.3,0,0.4s0.1,0.2,0.2,0.2s0.2,0.1,0.3,0.1     c0.1,0,0.2,0,0.4,0v1.4h-0.6c-0.3,0-0.6-0.1-0.8-0.2c-0.2-0.1-0.4-0.2-0.5-0.4s-0.2-0.3-0.3-0.5c-0.1-0.2-0.1-0.4-0.1-0.6v-4.3     h-0.7v-1.1H109.4z"></path><path fill="#1E1E1E" d="M116,49.2v-1.4h1.4v1.4H116z M116,57.5v-7h1.4v7H116z"></path><path fill="#1E1E1E" d="M125,57.5v-0.7c-0.1,0.1-0.2,0.2-0.3,0.3s-0.2,0.2-0.3,0.2c-0.1,0.1-0.2,0.1-0.4,0.2c-0.1,0-0.3,0.1-0.5,0.1     c-0.6,0-1-0.2-1.3-0.7c-0.1-0.2-0.1-0.4-0.2-0.6c0-0.2-0.1-0.6-0.1-1v-2.6c0-0.5,0-0.9,0-1.1c0.1-0.5,0.3-0.8,0.7-1.1     c0.2-0.1,0.4-0.2,0.8-0.2c0.3,0,0.5,0.1,0.8,0.2c0.2,0.1,0.4,0.3,0.6,0.5l0,0v-3.5h1.4v9.8L125,57.5L125,57.5z M123.7,55.3     c0,0.3,0.1,0.5,0.2,0.7s0.3,0.3,0.5,0.3s0.4-0.1,0.5-0.2c0.1-0.2,0.2-0.4,0.2-0.6v-2.7c0-0.2-0.1-0.4-0.2-0.6     c-0.1-0.1-0.3-0.2-0.5-0.2c-0.3,0-0.5,0.1-0.6,0.3s-0.1,0.4-0.1,0.6V55.3z"></path><path fill="#1E1E1E" d="M131.2,49.2v-1.4h1.4v1.4H131.2z M131.2,57.5v-7h1.4v7H131.2z"></path><path fill="#1E1E1E" d="M140.2,57.5v-0.7l0,0c-0.2,0.3-0.4,0.5-0.6,0.6c-0.2,0.1-0.5,0.2-0.8,0.2c-0.2,0-0.3,0-0.5-0.1     s-0.3-0.1-0.5-0.3c-0.2-0.1-0.3-0.3-0.4-0.6c-0.1-0.3-0.1-0.6-0.1-1s0-0.8,0.1-1.1c0.1-0.3,0.2-0.6,0.4-0.8s0.4-0.3,0.7-0.4     c0.3-0.1,0.7-0.1,1.1-0.1c0,0,0.1,0,0.2,0s0.1,0,0.2,0c0,0,0.1,0,0.2,0s0.1,0,0.2,0v-0.8c0-0.2-0.1-0.4-0.2-0.6     c-0.1-0.2-0.3-0.2-0.6-0.2c-0.2,0-0.4,0.1-0.5,0.2c-0.2,0.1-0.3,0.3-0.3,0.5h-1.4c0-0.6,0.3-1.2,0.7-1.6c0.2-0.2,0.4-0.3,0.7-0.4     c0.3-0.1,0.6-0.2,0.9-0.2s0.6,0,0.9,0.1c0.3,0.1,0.5,0.2,0.7,0.4s0.3,0.4,0.5,0.7c0.1,0.3,0.2,0.6,0.2,1v4.9h-1.7V57.5z      M140.2,54.6c-0.2,0-0.3,0-0.4,0c-0.3,0-0.6,0.1-0.8,0.2c-0.2,0.1-0.3,0.4-0.3,0.8c0,0.3,0.1,0.5,0.2,0.7     c0.1,0.2,0.3,0.3,0.6,0.3c0.2,0,0.4-0.1,0.6-0.2c0.1-0.2,0.2-0.4,0.2-0.7L140.2,54.6L140.2,54.6z"></path><path fill="#1E1E1E" d="M146.4,57.5v-7h1.4v0.7l0,0c0.2-0.2,0.3-0.4,0.5-0.6c0.2-0.1,0.5-0.2,0.8-0.2c0.2,0,0.4,0,0.5,0.1     s0.3,0.2,0.5,0.3c0.1,0.1,0.3,0.3,0.3,0.5c0.1,0.2,0.1,0.5,0.1,0.8v5.3H149v-4.9c0-0.3-0.1-0.5-0.2-0.6c-0.1-0.2-0.3-0.2-0.5-0.2     c-0.3,0-0.5,0.1-0.6,0.3c-0.1,0.2-0.2,0.4-0.2,0.7v4.7L146.4,57.5L146.4,57.5z"></path><path fill="#1E1E1E" d="M155.4,53c0-0.3,0-0.6,0.1-0.8c0-0.2,0.1-0.5,0.2-0.7c0.2-0.3,0.4-0.6,0.7-0.8c0.3-0.2,0.7-0.3,1.2-0.3     c0.5,0,0.8,0.1,1.2,0.3c0.3,0.2,0.6,0.4,0.7,0.8c0.1,0.2,0.2,0.4,0.2,0.7c0,0.2,0.1,0.5,0.1,0.8v2.3c0,0.3,0,0.6-0.1,0.8     c0,0.2-0.1,0.5-0.2,0.7c-0.2,0.3-0.4,0.6-0.7,0.8c-0.3,0.2-0.7,0.3-1.2,0.3c-0.5,0-0.8-0.1-1.2-0.3c-0.3-0.2-0.6-0.4-0.7-0.8     c-0.1-0.2-0.2-0.4-0.2-0.7c0-0.2-0.1-0.5-0.1-0.8V53z M156.7,55.5c0,0.3,0.1,0.5,0.2,0.6c0.1,0.1,0.3,0.2,0.5,0.2     s0.4-0.1,0.5-0.2c0.1-0.1,0.2-0.3,0.2-0.6v-2.7c0-0.3-0.1-0.5-0.2-0.6s-0.3-0.2-0.5-0.2s-0.4,0.1-0.5,0.2     c-0.1,0.1-0.2,0.3-0.2,0.6V55.5z"></path><path fill="#1E1E1E" d="M173.3,57.5v-0.7c-0.1,0.1-0.2,0.2-0.3,0.3c-0.1,0.1-0.2,0.2-0.3,0.2c-0.1,0.1-0.2,0.1-0.4,0.2     c-0.1,0-0.3,0.1-0.5,0.1c-0.6,0-1-0.2-1.3-0.7c-0.1-0.2-0.1-0.4-0.2-0.6c0-0.2-0.1-0.6-0.1-1v-2.6c0-0.5,0-0.9,0-1.1     c0.1-0.5,0.3-0.8,0.7-1.1c0.2-0.1,0.4-0.2,0.8-0.2c0.3,0,0.5,0.1,0.8,0.2c0.2,0.1,0.4,0.3,0.6,0.5l0,0v-3.5h1.4v9.8L173.3,57.5     L173.3,57.5z M172,55.3c0,0.3,0.1,0.5,0.2,0.7s0.3,0.3,0.5,0.3s0.4-0.1,0.5-0.2c0.1-0.2,0.2-0.4,0.2-0.6v-2.7     c0-0.2-0.1-0.4-0.2-0.6c-0.1-0.1-0.3-0.2-0.5-0.2c-0.3,0-0.5,0.1-0.6,0.3c-0.1,0.2-0.1,0.4-0.1,0.6L172,55.3L172,55.3z"></path><path fill="#1E1E1E" d="M183.7,54.6h-2.8v1c0,0.2,0.1,0.4,0.2,0.5s0.3,0.2,0.5,0.2c0.3,0,0.5-0.1,0.5-0.2c0.1-0.2,0.1-0.3,0.2-0.5     h1.4c0,0.6-0.2,1.1-0.6,1.5c-0.2,0.2-0.4,0.4-0.7,0.5c-0.3,0.1-0.6,0.2-0.9,0.2c-0.5,0-0.8-0.1-1.2-0.3c-0.3-0.2-0.6-0.4-0.7-0.8     c-0.1-0.2-0.2-0.4-0.2-0.7c0-0.2-0.1-0.5-0.1-0.8v-2.3c0-0.3,0-0.6,0.1-0.8c0-0.2,0.1-0.5,0.2-0.7c0.2-0.3,0.4-0.6,0.7-0.8     c0.3-0.2,0.7-0.3,1.2-0.3c0.3,0,0.6,0.1,0.9,0.2c0.3,0.1,0.5,0.3,0.7,0.5c0.4,0.4,0.6,1,0.6,1.6L183.7,54.6L183.7,54.6z      M180.9,53.5h1.4v-0.8c0-0.3-0.1-0.5-0.2-0.6c-0.1-0.1-0.3-0.2-0.5-0.2s-0.4,0.1-0.5,0.2c-0.1,0.1-0.2,0.3-0.2,0.6V53.5z"></path><path fill="#1E1E1E" d="M188.3,47.7h1.4v7.9c0,0.3,0,0.5,0.1,0.6c0.1,0.1,0.3,0.2,0.6,0.2v1.4c-0.3,0-0.6,0-0.9-0.1     c-0.3-0.1-0.5-0.2-0.7-0.3s-0.3-0.3-0.4-0.6s-0.1-0.6-0.1-1L188.3,47.7L188.3,47.7z"></path><path fill="#1E1E1E" d="M203.6,52.6c0-0.2-0.1-0.4-0.2-0.6c-0.1-0.1-0.3-0.2-0.5-0.2s-0.4,0.1-0.5,0.2c-0.1,0.1-0.2,0.3-0.2,0.5     c0,0.1,0,0.3,0.1,0.4c0.1,0.1,0.2,0.2,0.5,0.3l0.9,0.3c0.5,0.2,0.9,0.5,1.1,0.9c0.2,0.4,0.3,0.8,0.3,1.2c0,0.3-0.1,0.6-0.2,0.8     c-0.1,0.3-0.3,0.5-0.4,0.7c-0.2,0.2-0.4,0.4-0.7,0.5c-0.3,0.1-0.6,0.2-0.9,0.2c-0.6,0-1.1-0.2-1.5-0.6c-0.2-0.2-0.4-0.4-0.5-0.7     c-0.1-0.3-0.2-0.6-0.2-0.9h1.4c0,0.2,0.1,0.4,0.2,0.6c0.1,0.2,0.3,0.3,0.6,0.3c0.2,0,0.4-0.1,0.6-0.2c0.2-0.1,0.2-0.3,0.2-0.6     c0-0.2-0.1-0.4-0.2-0.5c-0.1-0.1-0.3-0.3-0.6-0.4l-0.7-0.3c-0.5-0.2-0.8-0.4-1.1-0.8c-0.3-0.3-0.4-0.7-0.4-1.2     c0-0.3,0.1-0.6,0.2-0.8c0.1-0.3,0.3-0.5,0.5-0.7s0.4-0.3,0.7-0.4c0.3-0.1,0.5-0.1,0.8-0.1c0.3,0,0.6,0.1,0.8,0.2     c0.3,0.1,0.5,0.3,0.6,0.4c0.2,0.2,0.3,0.4,0.4,0.7s0.2,0.5,0.2,0.8C204.8,52.6,203.6,52.6,203.6,52.6z"></path><path fill="#1E1E1E" d="M213.6,54.6h-2.8v1c0,0.2,0.1,0.4,0.2,0.5c0.1,0.1,0.3,0.2,0.5,0.2c0.3,0,0.5-0.1,0.5-0.2     c0.1-0.2,0.1-0.3,0.2-0.5h1.4c0,0.6-0.2,1.1-0.6,1.5c-0.2,0.2-0.4,0.4-0.7,0.5c-0.3,0.1-0.6,0.2-0.9,0.2c-0.5,0-0.8-0.1-1.2-0.3     c-0.3-0.2-0.6-0.4-0.7-0.8c-0.1-0.2-0.2-0.4-0.2-0.7c0-0.2-0.1-0.5-0.1-0.8v-2.3c0-0.3,0-0.6,0.1-0.8c0-0.2,0.1-0.5,0.2-0.7     c0.2-0.3,0.4-0.6,0.7-0.8c0.3-0.2,0.7-0.3,1.2-0.3c0.3,0,0.6,0.1,0.9,0.2c0.3,0.1,0.5,0.3,0.7,0.5c0.4,0.4,0.6,1,0.6,1.6     L213.6,54.6L213.6,54.6z M210.9,53.5h1.4v-0.8c0-0.3-0.1-0.5-0.2-0.6c-0.1-0.1-0.3-0.2-0.5-0.2s-0.4,0.1-0.5,0.2     c-0.1,0.1-0.2,0.3-0.2,0.6V53.5z"></path><path fill="#1E1E1E" d="M218.3,50.6v-2.1h1.4v2.1h0.9v1.1h-0.9v3.9c0,0.2,0,0.3,0,0.4s0.1,0.2,0.2,0.2c0.1,0,0.2,0.1,0.3,0.1     c0.1,0,0.2,0,0.4,0v1.4H220c-0.3,0-0.6-0.1-0.8-0.2c-0.2-0.1-0.4-0.2-0.5-0.4c-0.1-0.2-0.2-0.3-0.3-0.5s-0.1-0.4-0.1-0.6v-4.3     h-0.7v-1.1H218.3z"></path><path fill="#1E1E1E" d="M224.9,50.6v-2.1h1.4v2.1h0.9v1.1h-0.9v3.9c0,0.2,0,0.3,0,0.4s0.1,0.2,0.2,0.2c0.1,0,0.2,0.1,0.3,0.1     c0.1,0,0.2,0,0.4,0v1.4h-0.6c-0.3,0-0.6-0.1-0.8-0.2c-0.2-0.1-0.4-0.2-0.5-0.4c-0.1-0.2-0.2-0.3-0.3-0.5     c-0.1-0.2-0.1-0.4-0.1-0.6v-4.3h-0.7v-1.1H224.9z"></path><path fill="#1E1E1E" d="M231.3,53c0-0.3,0-0.6,0.1-0.8c0-0.2,0.1-0.5,0.2-0.7c0.2-0.3,0.4-0.6,0.7-0.8c0.3-0.2,0.7-0.3,1.2-0.3     c0.5,0,0.8,0.1,1.2,0.3c0.3,0.2,0.6,0.4,0.7,0.8c0.1,0.2,0.2,0.4,0.2,0.7c0,0.2,0.1,0.5,0.1,0.8v2.3c0,0.3,0,0.6-0.1,0.8     c0,0.2-0.1,0.5-0.2,0.7c-0.2,0.3-0.4,0.6-0.7,0.8c-0.3,0.2-0.7,0.3-1.2,0.3c-0.5,0-0.8-0.1-1.2-0.3c-0.3-0.2-0.6-0.4-0.7-0.8     c-0.1-0.2-0.2-0.4-0.2-0.7c0-0.2-0.1-0.5-0.1-0.8V53z M232.7,55.5c0,0.3,0.1,0.5,0.2,0.6s0.3,0.2,0.5,0.2s0.4-0.1,0.5-0.2     c0.1-0.1,0.2-0.3,0.2-0.6v-2.7c0-0.3-0.1-0.5-0.2-0.6c-0.1-0.1-0.3-0.2-0.5-0.2s-0.4,0.1-0.5,0.2c-0.1,0.1-0.2,0.3-0.2,0.6V55.5z     "></path><path fill="#1E1E1E" d="M240.2,57.5v-7h1.4v0.8c0.3-0.3,0.6-0.5,0.9-0.6c0.3-0.1,0.6-0.2,1-0.2V52c-0.1-0.1-0.3-0.1-0.4-0.1     c-0.1,0-0.3,0-0.5,0.1s-0.3,0.1-0.5,0.3c-0.2,0.1-0.3,0.3-0.4,0.5c-0.1,0.2-0.1,0.4-0.1,0.7v4.2L240.2,57.5L240.2,57.5z"></path><path fill="#1E1E1E" d="M251.9,54.6h-2.8v1c0,0.2,0.1,0.4,0.2,0.5c0.1,0.1,0.3,0.2,0.5,0.2c0.3,0,0.5-0.1,0.5-0.2     c0.1-0.2,0.1-0.3,0.2-0.5h1.4c0,0.6-0.2,1.1-0.6,1.5c-0.2,0.2-0.4,0.4-0.7,0.5c-0.3,0.1-0.6,0.2-0.9,0.2c-0.5,0-0.8-0.1-1.2-0.3     c-0.3-0.2-0.6-0.4-0.7-0.8c-0.1-0.2-0.2-0.4-0.2-0.7c0-0.2-0.1-0.5-0.1-0.8v-2.3c0-0.3,0-0.6,0.1-0.8c0-0.2,0.1-0.5,0.2-0.7     c0.2-0.3,0.4-0.6,0.7-0.8c0.3-0.2,0.7-0.3,1.2-0.3c0.3,0,0.6,0.1,0.9,0.2c0.3,0.1,0.5,0.3,0.7,0.5c0.4,0.4,0.6,1,0.6,1.6     L251.9,54.6L251.9,54.6z M249.1,53.5h1.4v-0.8c0-0.3-0.1-0.5-0.2-0.6c-0.1-0.1-0.3-0.2-0.5-0.2s-0.4,0.1-0.5,0.2     c-0.1,0.1-0.2,0.3-0.2,0.6L249.1,53.5L249.1,53.5z"></path><path fill="#1E1E1E" d="M262.9,49.2v-1.4h1.4v1.4H262.9z M262.9,57.5v-7h1.4v7H262.9z"></path><path fill="#1E1E1E" d="M269.2,50.6v-2.1h1.4v2.1h0.9v1.1h-0.9v3.9c0,0.2,0,0.3,0,0.4c0,0.1,0.1,0.2,0.2,0.2c0.1,0,0.2,0.1,0.3,0.1     c0.1,0,0.2,0,0.4,0v1.4h-0.6c-0.3,0-0.6-0.1-0.8-0.2c-0.2-0.1-0.4-0.2-0.5-0.4c-0.1-0.2-0.2-0.3-0.3-0.5s-0.1-0.4-0.1-0.6v-4.3     h-0.7v-1.1H269.2z"></path><path fill="#1E1E1E" d="M275.7,50.6v-2.1h1.4v2.1h0.9v1.1h-0.9v3.9c0,0.2,0,0.3,0,0.4c0,0.1,0.1,0.2,0.2,0.2s0.2,0.1,0.3,0.1     c0.1,0,0.2,0,0.4,0v1.4h-0.6c-0.3,0-0.6-0.1-0.8-0.2c-0.2-0.1-0.4-0.2-0.5-0.4s-0.2-0.3-0.3-0.5c-0.1-0.2-0.1-0.4-0.1-0.6v-4.3     H275v-1.1H275.7z"></path><path fill="#1E1E1E" d="M282.2,49.2v-1.4h1.4v1.4H282.2z M282.2,57.5v-7h1.4v7H282.2z"></path><path fill="#1E1E1E" d="M290,55.6c0,0.2,0.1,0.4,0.2,0.5c0.1,0.1,0.3,0.2,0.5,0.2c0.3,0,0.5-0.1,0.5-0.2c0.1-0.2,0.1-0.3,0.2-0.5     h1.4c0,0.6-0.2,1.1-0.6,1.5c-0.2,0.2-0.4,0.4-0.7,0.5c-0.3,0.1-0.6,0.2-0.9,0.2c-0.5,0-0.8-0.1-1.2-0.3c-0.3-0.2-0.6-0.4-0.7-0.8     c-0.1-0.2-0.2-0.4-0.2-0.7s-0.1-0.5-0.1-0.8v-2.3c0-0.3,0-0.6,0.1-0.8s0.1-0.5,0.2-0.7c0.2-0.3,0.4-0.6,0.7-0.8     c0.3-0.2,0.7-0.3,1.2-0.3c0.3,0,0.6,0.1,0.9,0.2c0.3,0.1,0.5,0.3,0.7,0.5c0.4,0.4,0.6,1,0.6,1.7h-1.4c0-0.3-0.1-0.5-0.2-0.6     s-0.3-0.2-0.5-0.2c-0.2,0-0.4,0.1-0.5,0.2c-0.1,0.1-0.2,0.3-0.2,0.6V55.6z"></path><path fill="#1E1E1E" d="M297.2,53c0-0.3,0-0.6,0.1-0.8c0-0.2,0.1-0.5,0.2-0.7c0.2-0.3,0.4-0.6,0.7-0.8c0.3-0.2,0.7-0.3,1.2-0.3     s0.8,0.1,1.2,0.3c0.3,0.2,0.6,0.4,0.7,0.8c0.1,0.2,0.2,0.4,0.2,0.7s0.1,0.5,0.1,0.8v2.3c0,0.3,0,0.6-0.1,0.8s-0.1,0.5-0.2,0.7     c-0.2,0.3-0.4,0.6-0.7,0.8c-0.3,0.2-0.7,0.3-1.2,0.3s-0.8-0.1-1.2-0.3c-0.3-0.2-0.6-0.4-0.7-0.8c-0.1-0.2-0.2-0.4-0.2-0.7     c0-0.2-0.1-0.5-0.1-0.8V53z M298.5,55.5c0,0.3,0.1,0.5,0.2,0.6c0.1,0.1,0.3,0.2,0.5,0.2c0.2,0,0.4-0.1,0.5-0.2     c0.1-0.1,0.2-0.3,0.2-0.6v-2.7c0-0.3-0.1-0.5-0.2-0.6s-0.3-0.2-0.5-0.2c-0.2,0-0.4,0.1-0.5,0.2c-0.1,0.1-0.2,0.3-0.2,0.6V55.5z"></path></g></g></g></svg></a>
+      <div class="pir-testatina-destra">
+        <div class="pir-marchio">Dati e mercati</div>
+        <div class="pir-quando" id="pir-quando"></div>
+      </div>
+    </div>
+
+    <div id="pir-stato" hidden></div>
+
+    <main>
+      <section class="pir-eroe" id="scheda" aria-labelledby="pir-nome-prodotto">
+        <nav class="pir-prodotti" id="pir-prodotti" aria-label="Prodotto" hidden></nav>
+        <label class="pir-scelta-mobile" id="pir-scelta-mobile" hidden>Specie
+          <select id="pir-select-prodotto"></select>
+        </label>
+
+        <div class="pir-eroe-corpo">
+          <div class="pir-eroe-testo">
+            <h2 class="pir-prodotto" id="pir-nome-prodotto">Salmone atlantico</h2>
+            <p class="pir-qualifica" id="pir-qualifica"></p>
+            <p class="pir-prezzo" id="pir-prezzo">—<span>€/kg</span></p>
+            <p class="pir-origine" id="pir-origine"></p>
+            <p class="pir-settimana pir-nascosto" id="pir-settimana"></p>
+            <p class="pir-badge pir-nascosto" id="pir-badge"></p>
+            <dl class="pir-delta" id="pir-delta"></dl>
+            <p class="pir-netto" id="pir-netto" hidden></p>
+            <p class="pir-lede" id="pir-lede" aria-live="polite"></p>
+            <p class="pir-ultima-visita" id="pir-ultima-visita" hidden></p>
+            <p class="pir-firma" id="pir-firma"></p>
+          </div>
+          <figure class="pir-figura pir-eroe-grafico">
+            <p class="pir-sopratitolo">Posizione nella stagione</p>
+            <p class="pir-sottotitolo">La settimana contro le stesse settimane degli ultimi cinque anni</p>
+            <div id="pir-banda" role="img" aria-labelledby="pir-banda-testo"></div>
+            <figcaption class="pir-didascalia" id="pir-banda-testo"></figcaption>
+            <ul class="pir-note-redazione" id="pir-note-banda"></ul>
+            <div class="pir-azioni">
+              <button type="button" id="pir-scarica-grafico">Scarica il grafico</button>
+              <button type="button" id="pir-copia-link">Copia il link a questa vista</button>
+              <span class="pir-azioni-esito" id="pir-azioni-esito" aria-live="polite"></span>
+            </div>
+          </figure>
+        </div>
+
+        <div class="pir-schede" role="tablist" aria-label="Livello di dettaglio">
+          <button type="button" role="tab" data-vista="essenziale" aria-pressed="true">
+            <strong>In breve</strong>
+            <span>Prezzo della settimana, stagionalità, sintesi</span>
+          </button>
+          <button type="button" role="tab" data-vista="completa" aria-pressed="false">
+            <strong>Analisi completa</strong>
+            <span>Storico, arrivi in Italia, confronti, costo a destino, fonti</span>
+          </button>
+        </div>
+      </section>
+
+      <nav class="pir-indice" id="pir-indice" aria-label="Sezioni dell'analisi completa">
+        <a href="#storico">Andamento storico</a>
+        <a href="#flussi">Arrivi in Italia</a>
+        <a href="#confronto">Confronto fra periodi</a>
+        <a href="#costo">Costo a destino</a>
+        <a href="#metodo">Fonti e metodo</a>
+      </nav>
+
+      <!-- ============ tutte le specie ============ -->
+      <section class="pir-riquadro pir-panoramica" id="panoramica" aria-labelledby="pir-titolo-panoramica" hidden>
+        <h2 id="pir-titolo-panoramica">Tutte le specie, <b>questa settimana</b></h2>
+        <p class="pir-spiega">Prezzo di riferimento in euro al chilo, variazione sulla settimana e sull'anno, posizione rispetto alla stagione.</p>
+        <div class="pir-scorri"><table class="pir-tabella" id="pir-tabella-panoramica"></table></div>
+      </section>
+
+      <!-- Il blocco seguente viene inserito già scritto dal generatore:
+           è testo statico, leggibile e indicizzabile anche senza script. -->
+      <div id="pir-sintesi-statica"></div>
+
+      <aside class="pir-iscrizione" id="pir-iscrizione" hidden>
+        <div>
+          <strong>Ricevi il bollettino ogni giovedì</strong>
+          <small>Una mail con i prezzi di tutte le specie e quello che merita attenzione. Niente altro, mai.</small>
+        </div>
+        <form id="pir-modulo-iscrizione" method="post" target="_blank">
+          <label class="pir-nascosto" for="pir-email">Email</label>
+          <input type="email" id="pir-email" name="EMAIL" placeholder="la tua email di lavoro" required>
+          <button type="submit">Iscrivimi</button>
+        </form>
+      </aside>
+
+      <aside class="pir-igb" id="pir-igb">
+        <div class="pir-igb-logo"><img src="data:image/png;base64,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" alt="Ittico Guida Buyer by Pesceinrete" width="325" height="62"></div>
+        <div class="pir-igb-testo"><strong id="pir-igb-titolo">Cerchi fornitori di salmone?</strong>
+          <small>Su Ittico Guida Buyer trovi produttori e distributori selezionati, con profili completi e contatti diretti.</small></div>
+        <a href="https://igb.pesceinrete.com/prodotti/" id="pir-igb-link">Vai a Ittico Guida Buyer</a>
+      </aside>
+
+      <!-- ============ arrivi in Italia ============ -->
+      <section class="pir-riquadro" data-livello="2" id="flussi" aria-labelledby="pir-titolo-flussi" hidden>
+        <h2 id="pir-titolo-flussi">Arrivi <b>in Italia</b></h2>
+        <p class="pir-spiega" id="pir-flussi-spiega"></p>
+        <div class="pir-flussi">
+          <div>
+            <p class="pir-cifra" id="pir-flussi-quantita">—<span>tonnellate</span></p>
+            <p class="pir-sotto-cifra" id="pir-flussi-quantita-nota"></p>
+            <p class="pir-cifra" id="pir-flussi-valore" style="margin-top:16px">—<span>€/kg</span></p>
+            <p class="pir-sotto-cifra" id="pir-flussi-valore-nota"></p>
+            <p class="pir-quota" id="pir-flussi-quota"></p>
+          </div>
+          <figure class="pir-figura">
+            <div id="pir-flussi-grafico" role="img" aria-labelledby="pir-flussi-testo"></div>
+            <figcaption class="pir-didascalia" id="pir-flussi-testo"></figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <!-- ============ bollettino ============ -->
+      <section class="pir-riquadro" id="bollettino" aria-labelledby="pir-titolo-bollettino">
+        <h2 id="pir-titolo-bollettino">La settimana <b>in breve</b></h2>
+        <p class="pir-spiega">Solo i fatti che il grafico non mostra da solo. Le cause non vengono
+          indovinate: dove servono, le aggiunge la redazione dopo averle verificate.</p>
+        <div id="pir-voci"></div>
+        <div class="pir-invito">
+          <p><strong>Vuoi andare oltre?</strong> L'analisi completa aggiunge lo storico con le date esatte,
+            gli arrivi in Italia per provenienza, il confronto fra periodi, il calcolatore del costo a destino
+            e le fonti.</p>
+          <button type="button" class="pir-bottone pir-bottone--pieno" data-vista="completa" data-scorri="storico">Apri l'analisi completa</button>
+        </div>
+      </section>
+
+      <!-- ============ serie storica ============ -->
+      <section class="pir-riquadro" data-livello="2" id="storico" aria-labelledby="pir-titolo-storico">
+        <h2 id="pir-titolo-storico">Andamento <b>storico</b></h2>
+        <p class="pir-spiega">Il prezzo è convertito in euro con il cambio medio della stessa settimana,
+          non con il cambio di oggi.</p>
+
+        <div class="pir-comandi">
+          <div class="pir-gruppo" role="group" aria-label="Grandezza">
+            <button type="button" data-misura="eur" aria-pressed="true">Prezzo €/kg</button>
+            <button type="button" data-misura="origine" aria-pressed="false" id="pir-bottone-origine">Prezzo in valuta</button>
+            <button type="button" data-misura="tonnellate" aria-pressed="false">Volume</button>
+          </div>
+          <div class="pir-gruppo" role="group" aria-label="Periodo">
+            <button type="button" data-finestra="13" aria-pressed="false">3 mesi</button>
+            <button type="button" data-finestra="52" aria-pressed="true">1 anno</button>
+            <button type="button" data-finestra="260" aria-pressed="false">5 anni</button>
+            <button type="button" data-finestra="0" aria-pressed="false">Tutto</button>
+          </div>
+          <label class="pir-campo">Dal<input type="date" id="pir-dal"></label>
+          <label class="pir-campo">Al<input type="date" id="pir-al"></label>
+          <button type="button" class="pir-bottone" id="pir-csv">Scarica CSV</button>
+        </div>
+
+        <figure class="pir-figura">
+          <div id="pir-storico" role="img" aria-labelledby="pir-storico-testo"></div>
+          <figcaption class="pir-didascalia" id="pir-storico-testo"></figcaption>
+          <ul class="pir-note-redazione" id="pir-note-storico"></ul>
+        </figure>
+      </section>
+
+      <!-- ============ confronto ============ -->
+      <section class="pir-riquadro" data-livello="2" id="confronto" aria-labelledby="pir-titolo-confronto">
+        <h2 id="pir-titolo-confronto">Confronto <b>fra periodi</b></h2>
+        <p class="pir-spiega">Il prezzo del periodo è la media ponderata sui volumi settimanali. I confronti
+          fra periodi di lunghezza diversa vengono segnalati e i totali non vengono messi a percentuale.</p>
+
+        <div class="pir-comandi">
+          <div class="pir-gruppo" role="group" aria-label="Termine di paragone">
+            <button type="button" data-paragone="precedente" aria-pressed="true">Periodo precedente</button>
+            <button type="button" data-paragone="anno" aria-pressed="false">Anno precedente</button>
+            <button type="button" data-paragone="libero" aria-pressed="false">Date scelte</button>
+          </div>
+          <label class="pir-campo" id="pir-campo-rif-dal" hidden>Riferimento dal<input type="date" id="pir-rif-dal"></label>
+          <label class="pir-campo" id="pir-campo-rif-al" hidden>Riferimento al<input type="date" id="pir-rif-al"></label>
+        </div>
+
+        <div id="pir-tabella-confronto"></div>
+      </section>
+
+      <!-- ============ costo a destino ============ -->
+      <section class="pir-riquadro pir-riquadro--simulazione" data-livello="2" id="costo" aria-labelledby="pir-titolo-costo">
+        <h2 id="pir-titolo-costo">Dal riferimento <b>al tuo costo</b></h2>
+        <p class="pir-spiega">Il filetto tratteggiato segnala che questa non è una fonte: è una simulazione
+          costruita sui parametri che inserisci. Serve a portare il riferimento di mercato sul prodotto come
+          lo compri e lo lavori tu.</p>
+
+        <div class="pir-calcolo">
+          <div>
+            <div class="pir-parametri pir-parametri--sopra">
+              <label class="pir-campo">Il riferimento è
+                <select id="pir-base-resa">
+                  <option value="origine">all'origine (FOB/FCA): aggiungo trasporto</option>
+                  <option value="destino">reso a destino (DAP/DDP): trasporto incluso</option>
+                </select></label>
+              <label class="pir-campo">Lavorazione
+                <select id="pir-lavorazione"></select></label>
+            </div>
+            <div class="pir-parametri">
+              <label class="pir-campo">Riferimento €/kg
+                <input type="number" id="pir-base" step="0.01" min="0"></label>
+              <label class="pir-campo">Maggiorazione %
+                <input type="number" id="pir-maggiorazione" step="0.5" min="0" value="0"></label>
+              <label class="pir-campo">Trasporto €/kg
+                <input type="number" id="pir-trasporto" step="0.01" min="0" value="0.45"></label>
+              <label class="pir-campo">Altri costi €/kg
+                <input type="number" id="pir-altri" step="0.01" min="0" value="0"></label>
+              <label class="pir-campo">Glassatura %
+                <input type="number" id="pir-glassatura" step="1" min="0" max="60" value="0"></label>
+              <label class="pir-campo">Resa %
+                <input type="number" id="pir-resa" step="1" min="1" max="400" value="100"></label>
+            </div>
+            <div class="pir-dettaglio">
+              <details>
+                <summary>Come vengono usati questi parametri</summary>
+                <div class="pir-corpo">
+                  <p>La maggiorazione e il trasporto si sommano al riferimento e danno il costo reso.
+                    La glassatura è acqua: su un congelato glassato al 10% il prodotto netto costa il
+                    costo reso diviso 0,90. La resa è quel che resta dopo la lavorazione, e divide di
+                    nuovo il costo.</p>
+                  <p>Il risultato serve a confrontare offerte diverse sulla stessa base, non a stabilire
+                    un prezzo di acquisto. Nessuno dei parametri viene salvato o inviato.</p>
+                </div>
+              </details>
+            </div>
+          </div>
+
+          <div class="pir-esito">
+            <p class="pir-esito-cifra" id="pir-esito-utile">—<span>€/kg utile</span></p>
+            <ul class="pir-passi" id="pir-passi"></ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ metodo ============ -->
+      <section class="pir-riquadro" data-livello="2" id="metodo" aria-labelledby="pir-titolo-metodo">
+        <h2 id="pir-titolo-metodo">Fonti <b>e metodo</b></h2>
+
+        <div class="pir-dettaglio">
+          <details open>
+            <summary>Il perimetro esatto del prezzo</summary>
+            <div class="pir-corpo" id="pir-perimetro"></div>
+          </details>
+        </div>
+        <div class="pir-dettaglio">
+          <details>
+            <summary>Fonte, licenza e aggiornamento</summary>
+            <div class="pir-corpo"><dl id="pir-provenienza"></dl></div>
+          </details>
+        </div>
+        <div class="pir-dettaglio">
+          <details>
+            <summary>Come leggiamo la stagionalità</summary>
+            <div class="pir-corpo">
+              <p>La banda raccoglie i valori delle stesse settimane dei cinque anni precedenti, presi in una
+                finestra di due settimane prima e due dopo. Il percentile dice quanti di quei valori stanno
+                sotto il prezzo di questa settimana.</p>
+              <p>Il confronto con il solo anno precedente non basta: un anno può essere stato anomalo. Con
+                meno di tre anni di storico o meno di dodici osservazioni utili la lettura stagionale non
+                viene pubblicata.</p>
+            </div>
+          </details>
+        </div>
+        <div class="pir-dettaglio">
+          <details>
+            <summary>Revisioni e aggiornamenti recenti</summary>
+            <div class="pir-corpo" id="pir-revisioni"></div>
+          </details>
+        </div>
+      </section>
+
+      <p class="pir-piede" id="pir-piede"></p>
+    </main>
+  </div>
+</div>
+
+<script type="application/ld+json" id="pir-schema"></script>
+<script>
+(function(){
+"use strict";
+
+/* ====================================================================
+   Stato
+   ==================================================================== */
+var D = null;          // documento completo
+var P = null;          // prodotto corrente
+var misura = "eur";
+var vista = "essenziale";
+var paragone = "precedente";
+var selezione = {dal:null, al:null};
+
+var MESI = ["gen","feb","mar","apr","mag","giu","lug","ago","set","ott","nov","dic"];
+
+/* Lo stato della consultazione vive nell'indirizzo: un collega che riceve
+   il collegamento vede la stessa cosa, non la vista predefinita. */
+function leggiIndirizzo(){
+  var frammento=(window.location.hash||"").replace(/^#/,"");
+  var stato={};
+  frammento.split("&").forEach(function(pezzo){
+    var parti=pezzo.split("=");
+    if(parti.length===2) stato[decodeURIComponent(parti[0])]=decodeURIComponent(parti[1]);
+  });
+  return stato;
+}
+function scriviIndirizzo(){
+  if(!P) return;
+  var pezzi=["p="+P.id,"v="+vista,"m="+misura,"dal="+selezione.dal,"al="+selezione.al];
+  var nuovo="#"+pezzi.join("&");
+  if(window.location.hash!==nuovo){
+    try{ history.replaceState(null,"",nuovo); }catch(e){ }
+  }
+}
+
+/* ====================================================================
+   Utilità
+   ==================================================================== */
+/* Formattazione italiana scritta a mano: toLocaleString dipende dai dati
+   locali del browser e su alcuni ambienti restituisce il punto decimale
+   inglese. Su una pagina di prezzi non è un dettaglio. */
+function num(valore, decimali){
+  if(valore===null||valore===undefined||valore===""||isNaN(valore)) return "n.d.";
+  var negativo=valore<0;
+  var parti=Math.abs(valore).toFixed(decimali).split(".");
+  parti[0]=parti[0].replace(/\B(?=(\d{3})+(?!\d))/g,".");
+  return (negativo?"-":"")+parti[0]+(parti[1]?","+parti[1]:"");
+}
+function segno(valore, decimali){
+  if(valore===null||valore===undefined) return "n.d.";
+  var glifo = valore>0?"▲ ":(valore<0?"▼ ":"= ");
+  return glifo+num(Math.abs(valore),decimali);
+}
+function settimanaVerso(chiave){                    // "2026-W36" -> Date del lunedi
+  var anno=+chiave.slice(0,4), sett=+chiave.slice(6);
+  var quattro=new Date(Date.UTC(anno,0,4));
+  var lunediUno=new Date(quattro);
+  lunediUno.setUTCDate(quattro.getUTCDate()-((quattro.getUTCDay()+6)%7));
+  var giorno=new Date(lunediUno);
+  giorno.setUTCDate(lunediUno.getUTCDate()+(sett-1)*7);
+  return giorno;
+}
+function versoSettimana(data){                      // Date -> "2026-W36"
+  var d=new Date(Date.UTC(data.getUTCFullYear(),data.getUTCMonth(),data.getUTCDate()));
+  d.setUTCDate(d.getUTCDate()+4-((d.getUTCDay()+6)%7));
+  var inizio=new Date(Date.UTC(d.getUTCFullYear(),0,1));
+  var n=Math.ceil(((d-inizio)/86400000+1)/7);
+  return d.getUTCFullYear()+"-W"+(n<10?"0"+n:n);
+}
+function iso(data){ return data.toISOString().slice(0,10); }
+function etichettaBreve(chiave){
+  var d=settimanaVerso(chiave);
+  return d.getUTCDate()+" "+MESI[d.getUTCMonth()]+" "+String(d.getUTCFullYear()).slice(2);
+}
+function serieSelezionata(){
+  return P.storico.filter(function(o){ return o.periodo>=selezione.dal && o.periodo<=selezione.al; });
+}
+function valoreDi(o){ return o[misura]; }
+function unitaCorrente(){
+  if(misura==="tonnellate") return "tonnellate";
+  return misura==="origine" ? P.serie.unita_origine : "€/kg";
+}
+
+/* ====================================================================
+   Calcoli, identici a core/metrics.py
+   ==================================================================== */
+function aggrega(punti){
+  var usate=punti.filter(function(o){return o.eur!==null;});
+  if(!usate.length) return {settimane:0, prezzo:null, volume:null, valore:null};
+  var conVolume=usate.filter(function(o){return o.tonnellate;});
+  if(conVolume.length===usate.length){
+    var volume=0, valore=0;
+    usate.forEach(function(o){ volume+=o.tonnellate; valore+=o.eur*o.tonnellate; });
+    return {settimane:usate.length, prezzo:valore/volume, volume:volume, valore:valore, ponderato:true};
+  }
+  var somma=0; usate.forEach(function(o){somma+=o.eur;});
+  return {settimane:usate.length, prezzo:somma/usate.length, volume:null, valore:null, ponderato:false};
+}
+function costoADestino(base, maggiorazione, trasporto, altri, glassatura, resa){
+  var passi=[], prezzo=base;
+  passi.push(["Riferimento di mercato", base]);
+  if(maggiorazione){ var q=prezzo*maggiorazione/100; prezzo+=q; passi.push(["Maggiorazione "+maggiorazione+"%", q]); }
+  if(trasporto){ prezzo+=trasporto; passi.push(["Trasporto", trasporto]); }
+  if(altri){ prezzo+=altri; passi.push(["Altri costi", altri]); }
+  passi.push(["Costo reso a destino", prezzo]);
+  if(glassatura){ prezzo=prezzo/(1-glassatura/100); passi.push(["Netto glassatura "+glassatura+"%", prezzo]); }
+  var utile=prezzo/(resa/100);
+  passi.push(["Per kg utilizzabile, resa "+resa+"%", utile]);
+  return {utile:utile, passi:passi};
+}
+
+/* ====================================================================
+   Grafici
+   ==================================================================== */
+function scala(dominio, intervallo){
+  var d0=dominio[0], d1=dominio[1], r0=intervallo[0], r1=intervallo[1];
+  var ampiezza=(d1-d0)||1;
+  return function(valore){ return r0+(valore-d0)/ampiezza*(r1-r0); };
+}
+function nodo(tag, attributi, testo){
+  var elemento=document.createElementNS("http://www.w3.org/2000/svg",tag);
+  for(var chiave in attributi){ if(attributi[chiave]!==null) elemento.setAttribute(chiave,attributi[chiave]); }
+  if(testo!==undefined) elemento.textContent=testo;
+  return elemento;
+}
+/* Un grafico disegnato per 1000 px e ridotto a 360 rende le etichette
+   illeggibili: sotto i 560 px si usa una geometria compatta. */
+function schermoStretto(contenitore){
+  try{ if(window.matchMedia && window.matchMedia("(max-width: 560px)").matches) return true; }catch(e){}
+  var largo=contenitore&&contenitore.clientWidth;
+  return !!largo && largo<560;
+}
+
+function telaio(larghezza, altezza){
+  var svg=nodo("svg",{viewBox:"0 0 "+larghezza+" "+altezza,preserveAspectRatio:"xMidYMid meet"});
+  return svg;
+}
+function assi(svg, m, x, y, etichetteX, decimali){
+  var passi=3;
+  for(var i=0;i<=passi;i++){
+    var valore=y.invertito[0]+(y.invertito[1]-y.invertito[0])*i/passi;
+    var py=y(valore);
+    svg.appendChild(nodo("line",{x1:m.sinistra,x2:m.larghezza-m.destra,y1:py,y2:py,
+      stroke:coloreVariabile("--riga","#e4e8ee"),"stroke-width":1}));
+    svg.appendChild(nodo("text",{x:m.sinistra-8,y:py+4,"text-anchor":"end",
+      "font-size":11,fill:coloreVariabile("--tenue","#9aa5b1")},num(valore,decimali)));
+  }
+  etichetteX.forEach(function(e){
+    svg.appendChild(nodo("text",{x:x(e.posizione),y:m.altezza-m.sotto+18,"text-anchor":"middle",
+      "font-size":11,fill:coloreVariabile("--tenue","#9aa5b1")},e.testo));
+  });
+}
+
+function disegnaBanda(){
+  var contenitore=document.getElementById("pir-banda");
+  contenitore.innerHTML="";
+  var banda=P.banda_stagionale, anno=P.anno_corrente;
+  if(!banda.length){ contenitore.textContent="Storico insufficiente."; return; }
+
+  var stretto=schermoStretto(contenitore);
+  var m=stretto
+    ? {larghezza:420,altezza:250,sinistra:36,destra:50,sopra:16,sotto:24}
+    : {larghezza:900,altezza:320,sinistra:40,destra:96,sopra:18,sotto:26};
+  var svg=telaio(m.larghezza,m.altezza);
+
+  var valori=[];
+  banda.forEach(function(b){ valori.push(b.minimo,b.massimo); });
+  anno.punti.forEach(function(p){ valori.push(p.valore); });
+  var minimo=Math.min.apply(null,valori), massimo=Math.max.apply(null,valori);
+  var margine=(massimo-minimo)*0.12;
+
+  var x=scala([1,52],[m.sinistra,m.larghezza-m.destra]);
+  var y=scala([minimo-margine,massimo+margine],[m.altezza-m.sotto,m.sopra]);
+  y.invertito=[minimo-margine,massimo+margine];
+
+  // mesi invece di numeri di settimana: si legge senza pensare
+  var mesiSett=stretto?[[1,0],[18,4],[36,8]]:[[1,0],[9,2],[18,4],[27,6],[36,8],[44,10]];
+  var etichette=mesiSett.map(function(c){ return {posizione:c[0],testo:MESI[c[1]]}; });
+  assi(svg,m,x,y,etichette,2);
+
+  var sopra="", sotto="";
+  banda.forEach(function(b,i){ sopra+=(i?" L":"M")+x(b.settimana)+" "+y(b.massimo); });
+  for(var i=banda.length-1;i>=0;i--){ sotto+=" L"+x(banda[i].settimana)+" "+y(banda[i].minimo); }
+  svg.appendChild(nodo("path",{d:sopra+sotto+" Z",fill:coloreVariabile("--accento-velo","#eef5fa"),stroke:"none"}));
+
+  // l'anno scorso, in grigio: è il confronto che un compratore fa a mente
+  var scorso=(P.anno_precedente&&P.anno_precedente.punti)||[];
+  if(scorso.length>1){
+    var ls="";
+    scorso.forEach(function(p,i){ ls+=(i?"L":"M")+x(p.settimana)+" "+y(p.valore); });
+    svg.appendChild(nodo("path",{d:ls,fill:"none",stroke:coloreVariabile("--riga-forte","#cbd2db"),
+      "stroke-width":1.6,"stroke-linejoin":"round"}));
+    var fineScorso=scorso[scorso.length-1];
+    svg.appendChild(nodo("text",{x:x(fineScorso.settimana)+6,y:y(fineScorso.valore)+4,"font-size":11,
+      fill:coloreVariabile("--tenue","#9aa5b1")},String(P.anno_precedente.anno)));
+  }
+  // etichetta della fascia, in alto a destra dentro la fascia
+  var ultimaBanda=banda[banda.length-1];
+  var primoAnno=(P.stagionale.anni||[])[0], ultimoAnno=(P.stagionale.anni||[]).slice(-1)[0];
+  if(ultimaBanda && primoAnno){
+    svg.appendChild(nodo("text",{x:x(ultimaBanda.settimana)-4,y:y(ultimaBanda.massimo)-6,"font-size":11,
+      "text-anchor":"end",fill:coloreVariabile("--tenue","#9aa5b1")},
+      (stretto?"":"intervallo ")+primoAnno+"-"+String(ultimoAnno).slice(2)));
+  }
+
+  var linea="";
+  anno.punti.forEach(function(p,i){ linea+=(i?"L":"M")+x(p.settimana)+" "+y(p.valore); });
+  var tracciato=nodo("path",{d:linea,fill:"none",stroke:coloreVariabile("--accento","#003757"),"stroke-width":2.2,
+    "stroke-linejoin":"round","stroke-linecap":"round",class:"pir-anima"});
+  svg.appendChild(tracciato);
+
+  var ultimo=anno.punti[anno.punti.length-1];
+  if(ultimo){
+    svg.appendChild(nodo("circle",{cx:x(ultimo.settimana),cy:y(ultimo.valore),r:5.5,fill:coloreVariabile("--azzurro","#1f8dcc"),
+      stroke:coloreVariabile("--accento","#003757"),"stroke-width":2}));
+    var testo=nodo("text",{x:x(ultimo.settimana)+9,y:y(ultimo.valore)+4,"font-size":13,
+      "font-weight":700,fill:coloreVariabile("--accento","#003757")},num(ultimo.valore,2)+" · "+anno.anno);
+    if(x(ultimo.settimana)>m.larghezza-m.destra-30){
+      testo.setAttribute("x",x(ultimo.settimana)-9);
+      testo.setAttribute("text-anchor","end");
+    }
+    svg.appendChild(testo);
+  }
+
+  // note della redazione dell'anno in corso: un marcatore giallo con il numero
+  var noteAnno=(P.annotazioni||[]).filter(function(n){ return parseInt(n.periodo.slice(0,4),10)===anno.anno; });
+  noteAnno.forEach(function(n,i){
+    var settimana=parseInt(n.periodo.slice(6),10);
+    var punto=anno.punti.filter(function(p){ return p.settimana===settimana; })[0];
+    if(!punto) return;
+    svg.appendChild(nodo("line",{x1:x(settimana),x2:x(settimana),y1:y(punto.valore)-8,y2:m.sopra+6,
+      stroke:coloreVariabile("--azzurro","#1f8dcc"),"stroke-width":1.5,"stroke-dasharray":"2 3"}));
+    svg.appendChild(nodo("circle",{cx:x(settimana),cy:m.sopra+6,r:8,fill:coloreVariabile("--azzurro","#1f8dcc"),
+      stroke:coloreVariabile("--accento","#003757"),"stroke-width":1.5}));
+    svg.appendChild(nodo("text",{x:x(settimana),y:m.sopra+10,"font-size":10,"font-weight":800,"text-anchor":"middle",
+      fill:coloreVariabile("--accento","#003757")},String(i+1)));
+  });
+  scriviNote("pir-note-banda",noteAnno);
+
+  contenitore.appendChild(svg);
+  requestAnimationFrame(function(){
+    try{ tracciato.style.setProperty("--lunghezza",tracciato.getTotalLength()); }catch(e){}
+  });
+
+  var anni=P.stagionale.anni||[];
+  document.getElementById("pir-banda-testo").textContent =
+    "Euro al chilo per settimana. La fascia chiara è l'intervallo fra minimo e massimo delle stesse "+
+    "settimane degli anni "+(anni.length?anni[0]+"-"+anni[anni.length-1]:"precedenti")+
+    "; la linea scura è il "+anno.anno+", quella grigia il "+(anno.anno-1)+".";
+}
+
+function disegnaStorico(){
+  var contenitore=document.getElementById("pir-storico");
+  contenitore.innerHTML="";
+  var punti=serieSelezionata().filter(function(o){ return valoreDi(o)!==null; });
+  if(punti.length<2){
+    contenitore.textContent="Nessun dato nel periodo scelto.";
+    document.getElementById("pir-storico-testo").textContent="";
+    return;
+  }
+
+  var stretto=schermoStretto(contenitore);
+  var m=stretto
+    ? {larghezza:480,altezza:260,sinistra:46,destra:12,sopra:12,sotto:28}
+    : {larghezza:1020,altezza:290,sinistra:52,destra:16,sopra:14,sotto:30};
+  var svg=telaio(m.larghezza,m.altezza);
+
+  var valori=punti.map(valoreDi);
+  var minimo=Math.min.apply(null,valori), massimo=Math.max.apply(null,valori);
+  var margine=(massimo-minimo)*0.12||1;
+  var base=misura==="tonnellate"?0:minimo-margine;
+
+  var x=scala([0,punti.length-1],[m.sinistra,m.larghezza-m.destra]);
+  var y=scala([base,massimo+margine],[m.altezza-m.sotto,m.sopra]);
+  y.invertito=[base,massimo+margine];
+
+  var quante=Math.min(stretto?4:6,punti.length);
+  var etichette=[];
+  for(var i=0;i<quante;i++){
+    var indice=Math.round(i*(punti.length-1)/(quante-1||1));
+    etichette.push({posizione:indice,testo:etichettaBreve(punti[indice].periodo)});
+  }
+  assi(svg,m,x,y,etichette,misura==="tonnellate"?0:2);
+
+  if(misura==="tonnellate"){
+    var passo=Math.max(1,(m.larghezza-m.sinistra-m.destra)/punti.length-1);
+    punti.forEach(function(o,i){
+      svg.appendChild(nodo("rect",{x:x(i)-passo/2,y:y(valoreDi(o)),width:passo,
+        height:Math.max(0,y(0)-y(valoreDi(o))),fill:coloreVariabile("--accento","#003757"),opacity:.75}));
+    });
+  }else{
+    var d="";
+    punti.forEach(function(o,i){ d+=(i?"L":"M")+x(i)+" "+y(valoreDi(o)); });
+    svg.appendChild(nodo("path",{d:d,fill:"none",stroke:coloreVariabile("--accento","#003757"),
+      "stroke-width":1.9,"stroke-linejoin":"round"}));
+    var ultimo=punti[punti.length-1];
+    svg.appendChild(nodo("circle",{cx:x(punti.length-1),cy:y(valoreDi(ultimo)),r:3.5,fill:coloreVariabile("--accento","#003757")}));
+  }
+
+  // note della redazione dentro il periodo mostrato
+  var notePeriodo=(P.annotazioni||[]).filter(function(n){ return n.periodo>=selezione.dal && n.periodo<=selezione.al; });
+  notePeriodo.forEach(function(n,i){
+    var indice=-1;
+    punti.forEach(function(o,k){ if(o.periodo===n.periodo) indice=k; });
+    if(indice<0) return;
+    svg.appendChild(nodo("line",{x1:x(indice),x2:x(indice),y1:m.sopra+6,y2:m.altezza-m.sotto,
+      stroke:coloreVariabile("--azzurro","#1f8dcc"),"stroke-width":1.5,"stroke-dasharray":"2 3"}));
+    svg.appendChild(nodo("circle",{cx:x(indice),cy:m.sopra+6,r:8,fill:coloreVariabile("--azzurro","#1f8dcc"),
+      stroke:coloreVariabile("--accento","#003757"),"stroke-width":1.5}));
+    svg.appendChild(nodo("text",{x:x(indice),y:m.sopra+10,"font-size":10,"font-weight":800,"text-anchor":"middle",
+      fill:coloreVariabile("--accento","#003757")},String(i+1)));
+  });
+  scriviNote("pir-note-storico",notePeriodo);
+
+  contenitore.appendChild(svg);
+  collegaLettura(svg, punti, x, y, m);
+
+  var agg=aggrega(serieSelezionata());
+  document.getElementById("pir-storico-testo").textContent =
+    punti.length+" settimane, da "+etichettaBreve(punti[0].periodo)+" a "+
+    etichettaBreve(punti[punti.length-1].periodo)+". "+
+    (misura==="tonnellate"
+      ? "Volume complessivo "+num(agg.volume,0)+" tonnellate."
+      : "Media ponderata sui volumi "+num(agg.prezzo,2)+" €/kg.");
+}
+
+/* ====================================================================
+   Testi
+   ==================================================================== */
+/* Lettura puntuale: passando sopra il grafico si legge la settimana e il
+   valore esatto. Un grafico di prezzi senza questa possibilità obbliga a
+   scaricare il CSV per sapere un numero. */
+function collegaLettura(svg, punti, x, y, m){
+  var figura=svg.parentNode.parentNode;
+  var etichetta=figura.querySelector(".pir-lettura");
+  if(!etichetta){
+    etichetta=document.createElement("div");
+    etichetta.className="pir-lettura";
+    figura.appendChild(etichetta);
+  }
+  var guida=nodo("line",{x1:0,x2:0,y1:m.sopra,y2:m.altezza-m.sotto,
+    stroke:coloreVariabile("--accento","#003757"),"stroke-width":1,opacity:0});
+  svg.appendChild(guida);
+
+  function muovi(evento){
+    var riquadro=svg.getBoundingClientRect();
+    var punto=(evento.touches?evento.touches[0]:evento);
+    var relativo=(punto.clientX-riquadro.left)/riquadro.width*m.larghezza;
+    var frazione=(relativo-m.sinistra)/((m.larghezza-m.destra-m.sinistra)||1);
+    var indice=Math.round(frazione*(punti.length-1));
+    if(indice<0) indice=0;
+    if(indice>punti.length-1) indice=punti.length-1;
+    var scelto=punti[indice];
+
+    guida.setAttribute("x1",x(indice));
+    guida.setAttribute("x2",x(indice));
+    guida.setAttribute("opacity",0.35);
+    etichetta.textContent=etichettaBreve(scelto.periodo)+" · "+
+      num(valoreDi(scelto),misura==="tonnellate"?0:2)+" "+unitaCorrente();
+    etichetta.style.left=(x(indice)/m.larghezza*100)+"%";
+    etichetta.style.top=(y(valoreDi(scelto))/m.altezza*100)+"%";
+    etichetta.setAttribute("data-visibile","1");
+  }
+  function esci(){
+    guida.setAttribute("opacity",0);
+    etichetta.setAttribute("data-visibile","0");
+  }
+  svg.addEventListener("mousemove",muovi);
+  svg.addEventListener("touchmove",muovi,{passive:true});
+  svg.addEventListener("mouseleave",esci);
+  svg.addEventListener("touchend",esci);
+}
+
+function scriviNote(id, note){
+  var elenco=document.getElementById(id);
+  if(!elenco) return;
+  elenco.innerHTML=note.map(function(n,i){
+    return "<li><b>"+(i+1)+"</b><span>"+etichettaBreve(n.periodo)+" — "+n.testo+"</span></li>";
+  }).join("");
+  elenco.hidden=!note.length;
+}
+
+/* "Dalla tua ultima visita": il browser ricorda prezzo e settimana che
+   il lettore ha visto l'ultima volta per questa specie, e la pagina gli
+   dice cosa è cambiato. Resta sul suo dispositivo, non viene inviato. */
+function ultimaVisita(){
+  var riga=document.getElementById("pir-ultima-visita");
+  if(!riga) return;
+  var chiave="pir-visita-"+P.id, prima=null;
+  try{ prima=JSON.parse(localStorage.getItem(chiave)||"null"); }catch(e){}
+  riga.hidden=true;
+  if(prima && prima.periodo && prima.periodo!==P.ultimo_periodo && prima.prezzo){
+    var delta=(P.prezzo_eur_kg-prima.prezzo)/prima.prezzo*100;
+    riga.textContent="Dalla tua ultima visita (settimana "+prima.periodo.slice(6)+", "+num(prima.prezzo,2)+" €/kg) il prezzo è "+
+      (Math.abs(delta)<0.5?"praticamente fermo":((delta>0?"salito":"sceso")+" del "+num(Math.abs(delta),1)+"%"))+".";
+    riga.hidden=false;
+  }
+  try{ localStorage.setItem(chiave,JSON.stringify({periodo:P.ultimo_periodo,prezzo:P.prezzo_eur_kg})); }catch(e){}
+}
+
+function disegnaFlussi(){
+  var sezione=document.getElementById("flussi");
+  var f=P.flussi;
+  if(!f){ sezione.hidden=true; return; }
+  sezione.hidden=false;
+
+  var d=f.dodici_mesi;
+  document.getElementById("pir-flussi-spiega").textContent=
+    f.indicatore+". "+f.note+" Ultimo mese disponibile: "+f.ultimo_mese_esteso+
+    ", con il consueto ritardo di questa fonte rispetto ai prezzi settimanali.";
+
+  document.getElementById("pir-flussi-quantita").innerHTML=
+    num(d.tonnellate,0)+"<span>tonnellate</span>";
+  document.getElementById("pir-flussi-quantita-nota").textContent=
+    "Dodici mesi fino a "+f.ultimo_mese_esteso+
+    (d.delta_tonnellate===null?"":", "+segno(d.delta_tonnellate,1)+"% sui dodici precedenti")+
+    (d.mesi_usati<12?" · attenzione: solo "+d.mesi_usati+" mesi disponibili":"");
+
+  document.getElementById("pir-flussi-valore").innerHTML=
+    num(d.valore_unitario,2)+"<span>€/kg</span>";
+  document.getElementById("pir-flussi-valore-nota").textContent=
+    "Valore unitario medio in dogana"+
+    (d.delta_valore_unitario===null?"":", "+segno(d.delta_valore_unitario,1)+"% sui dodici precedenti")+
+    ". Non è un prezzo di acquisto.";
+
+  var provenienze=(f.provenienze||[]).slice(0,4);
+  document.getElementById("pir-flussi-quota").innerHTML= provenienze.length
+    ? "<span class='pir-etichetta-piccola'>Provenienze, ultimi dodici mesi</span>"+
+      "<ul class='pir-provenienze'>"+provenienze.map(function(pr){
+        return "<li><span>"+pr.paese+"</span><span>"+num(pr.quota,1)+"%</span>"+
+          "<span>"+num(pr.valore_unitario,2)+" €/kg</span></li>";
+      }).join("")+"</ul>"
+    : "";
+
+  var contenitore=document.getElementById("pir-flussi-grafico");
+  contenitore.innerHTML="";
+  var serie=f.serie.slice(-36);
+  if(serie.length<2) return;
+
+  var stretto=schermoStretto(contenitore);
+  var m=stretto
+    ? {larghezza:420,altezza:230,sinistra:44,destra:10,sopra:12,sotto:26}
+    : {larghezza:620,altezza:250,sinistra:48,destra:14,sopra:14,sotto:28};
+  var svg=telaio(m.larghezza,m.altezza);
+  var valori=serie.map(function(o){ return o.tonnellate; });
+  var massimo=Math.max.apply(null,valori);
+  var x=scala([0,serie.length-1],[m.sinistra,m.larghezza-m.destra]);
+  var y=scala([0,massimo*1.1],[m.altezza-m.sotto,m.sopra]);
+  y.invertito=[0,massimo*1.1];
+
+  var etichette=[];
+  for(var i=0;i<4;i++){
+    var indice=Math.round(i*(serie.length-1)/3);
+    var parti=serie[indice].periodo.split("-M");
+    etichette.push({posizione:indice,testo:MESI[parseInt(parti[1],10)-1]+" "+parti[0].slice(2)});
+  }
+  assi(svg,m,x,y,etichette,0);
+
+  var passo=Math.max(2,(m.larghezza-m.sinistra-m.destra)/serie.length-2);
+  serie.forEach(function(o,i){
+    svg.appendChild(nodo("rect",{x:x(i)-passo/2,y:y(o.tonnellate),width:passo,
+      height:Math.max(0,y(0)-y(o.tonnellate)),fill:coloreVariabile("--accento","#003757"),opacity:.7}));
+  });
+  contenitore.appendChild(svg);
+
+  document.getElementById("pir-flussi-testo").textContent=
+    "Importazioni italiane mensili in tonnellate, ultimi "+serie.length+" mesi. "+f.fonte+".";
+}
+
+function scriviBollettino(){
+  var voci=P.bollettino||[];
+  var contenitore=document.getElementById("pir-voci");
+  if(!voci.length){
+    contenitore.innerHTML='<p class="pir-quiete">Nessun movimento fuori dall\'ordinario: '+
+      "il prezzo resta dentro l'intervallo abituale del periodo e i volumi non presentano "+
+      "scarti. Anche questa è un'informazione per chi deve decidere se comprare adesso "+
+      "o aspettare.</p>";
+    return;
+  }
+  contenitore.innerHTML=voci.map(function(v){
+    return '<div class="pir-voce'+(v.rilievo==="alto"?" pir-voce--alto":"")+'">'+
+      "<h3>"+v.titolo+"</h3><p>"+v.testo+"</p></div>";
+  }).join("");
+}
+
+function scriviPanoramica(){
+  var sezione=document.getElementById("panoramica");
+  if(!sezione) return;
+  if(D.prodotti.length<2){ sezione.hidden=true; return; }
+  sezione.hidden=false;
+  var schema=window.PESCEINRETE_URL_PRODOTTO||null;
+  var righe=D.prodotti.map(function(pr){
+    var p=pr.percentile, att=pr.stagionale_attendibile;
+    var classe=(!att||p===null)?"":(p>=80?" pir-posizione--alto":(p<=20?" pir-posizione--basso":""));
+    var etichetta=(!att||p===null)?"storico corto":(p>=80?"sopra la norma":(p<=20?"sotto la norma":"nella norma"));
+    var nome=schema?'<a href="'+schema.replace("{id}",pr.id)+'">'+pr.nome+"</a>":
+      '<a href="#p='+pr.id+'" data-prodotto-riga="'+pr.id+'">'+pr.nome+"</a>";
+    return "<tr><td>"+nome+"</td><td>"+num(pr.prezzo_eur_kg,2)+"</td><td>"+segno(pr.variazione_settimana,1)+"%</td>"+
+      "<td>"+segno(pr.variazione_anno,1)+"%</td><td><span class='pir-posizione"+classe+"'>"+etichetta+"</span></td></tr>";
+  }).join("");
+  document.getElementById("pir-tabella-panoramica").innerHTML=
+    "<thead><tr><th>Specie</th><th>€/kg</th><th>Settimana</th><th>Anno</th><th>Stagione</th></tr></thead><tbody>"+righe+"</tbody>";
+  if(!schema){
+    Array.prototype.forEach.call(document.querySelectorAll("[data-prodotto-riga]"),function(a){
+      a.addEventListener("click",function(ev){
+        ev.preventDefault();
+        var id=a.getAttribute("data-prodotto-riga");
+        caricaProdotto(id,function(prodotto){ P=prodotto; scriviSelettore(); mostraProdotto();
+          var cima=document.getElementById("scheda"); if(cima&&cima.scrollIntoView) cima.scrollIntoView({behavior:"smooth"}); });
+      });
+    });
+  }
+}
+
+function scriviSelettore(){
+  var contenitore=document.getElementById("pir-prodotti");
+  var mobile=document.getElementById("pir-scelta-mobile");
+  var select=document.getElementById("pir-select-prodotto");
+  if(D.prodotti.length<2){ contenitore.hidden=true; if(mobile) mobile.hidden=true; return; }
+  contenitore.hidden=false;
+  if(mobile && select){
+    mobile.hidden=false;
+    select.innerHTML=D.prodotti.map(function(pr){
+      return '<option value="'+pr.id+'"'+(pr.id===P.id?" selected":"")+'>'+pr.nome+" · "+num(pr.prezzo_eur_kg,2)+" €/kg</option>";
+    }).join("");
+    if(!select.getAttribute("data-collegato")){
+      select.setAttribute("data-collegato","1");
+      select.addEventListener("change",function(){
+        var schema=window.PESCEINRETE_URL_PRODOTTO||null;
+        if(schema){ window.location.href=schema.replace("{id}",select.value); return; }
+        caricaProdotto(select.value,function(prodotto){ P=prodotto; scriviSelettore(); mostraProdotto(); });
+      });
+    }
+  }
+  var schema=window.PESCEINRETE_URL_PRODOTTO||null;   // es. "/dati-mercati/{id}/"
+  contenitore.innerHTML=D.prodotti.map(function(prodotto){
+    var prezzo='<span class="pir-selettore-prezzo">'+num(prodotto.prezzo_eur_kg,2)+'</span>';
+    if(schema){
+      return '<a href="'+schema.replace("{id}",prodotto.id)+'" data-prodotto="'+prodotto.id+
+        '" aria-current="'+(prodotto.id===P.id?"page":"false")+'">'+prodotto.nome+prezzo+"</a>";
+    }
+    return '<button type="button" data-prodotto="'+prodotto.id+'" aria-pressed="'+
+      (prodotto.id===P.id)+'">'+prodotto.nome+prezzo+"</button>";
+  }).join("");
+  if(schema) return;
+  gruppo("[data-prodotto]","data-prodotto",function(identificativo){
+    caricaProdotto(identificativo,function(prodotto){ P=prodotto; mostraProdotto(); });
+  });
+}
+
+function scriviApertura(){
+  var s=P.serie;
+  document.getElementById("pir-nome-prodotto").textContent=P.nome;
+  document.getElementById("pir-qualifica").textContent=
+    s.conservazione+". "+s.pezzatura+". "+s.fase+".";
+  document.getElementById("pir-prezzo").innerHTML=num(P.prezzo_eur_kg,2)+"<span>€/kg</span>";
+  document.getElementById("pir-origine").textContent=
+    (P.serie.valuta_origine==="EUR" ? P.serie.fonte : num(P.prezzo_origine,2)+" "+P.serie.unita_origine)+
+    (P.cambio?" al cambio "+num(P.cambio,3):"")+
+    (P.con_volumi&&P.volume_tonnellate?" · "+num(P.volume_tonnellate,0)+" tonnellate":"");
+  document.getElementById("pir-settimana").textContent=
+    "Settimana "+P.ultimo_periodo.slice(6)+", "+P.ultimo_periodo_esteso;
+
+  var badge=document.getElementById("pir-badge");
+  var p=P.stagionale.percentile;
+  var alto=P.stagionale.attendibile && p!==null && p>=80;
+  var basso=P.stagionale.attendibile && p!==null && p<=20;
+  badge.textContent=P.stagionale.lettura;
+  badge.setAttribute("data-verdetto",
+    !P.stagionale.attendibile||p===null ? "Storico corto" :
+    (alto?"Sopra la norma":(basso?"Sotto la norma":"Nella norma")));
+  badge.className="pir-badge pir-nascosto "+(alto?"pir-badge--sopra":(basso?"pir-badge--sotto":"pir-badge--norma"));
+
+  var v=P.variazioni;
+  document.getElementById("pir-delta").innerHTML=
+    "<div><dt>Settimana</dt><dd>"+segno(v.settimana,1)+"%</dd></div>"+
+    "<div><dt>4 settimane</dt><dd>"+segno(v.quattro_settimane,1)+"%</dd></div>"+
+    "<div><dt>Anno</dt><dd>"+segno(v.anno,1)+"%</dd></div>";
+  document.getElementById("pir-lede").textContent=P.lede||"";
+  var netto=document.getElementById("pir-netto"), sn=P.stagionale_al_netto;
+  if(netto){
+    if(sn && sn.attendibile && sn.percentile!==null){
+      var verdetto=sn.percentile>=80?"sopra la norma":(sn.percentile<=20?"sotto la norma":"nella norma");
+      netto.innerHTML="Al netto del livello generale dei prezzi: <b>"+verdetto+"</b> (percentile "+num(sn.percentile,0)+
+        " sul rapporto con la media mobile a 52 settimane).";
+      netto.hidden=false;
+    }else{ netto.hidden=true; }
+  }
+  document.getElementById("pir-quando").textContent=
+    "Settimana "+P.ultimo_periodo.slice(6)+" · "+P.ultimo_periodo_esteso;
+  var titoloIgb=document.getElementById("pir-igb-titolo");
+  if(titoloIgb) titoloIgb.textContent="Cerchi fornitori di "+P.nome.toLowerCase()+"?";
+  document.getElementById("pir-firma").textContent=
+    "A cura della redazione · settimana "+P.ultimo_periodo.slice(6)+", "+P.ultimo_periodo_esteso+
+    " · aggiornato il "+D.generato_il.slice(8,10)+"/"+D.generato_il.slice(5,7)+"/"+D.generato_il.slice(0,4);
+}
+
+function scriviConfronto(){
+  var punti=serieSelezionata();
+  var corrente=aggrega(punti);
+  var rif=riferimento();
+  var puntiRif=P.storico.filter(function(o){ return o.periodo>=rif.dal && o.periodo<=rif.al; });
+  var base=aggrega(puntiRif);
+
+  var omogeneo=corrente.settimane===base.settimane && corrente.settimane>0;
+  function delta(a,b){ return (a!==null&&b)?((a-b)/b*100):null; }
+
+  var righe=[
+    ["Prezzo medio ponderato","€/kg",corrente.prezzo,base.prezzo,
+      delta(corrente.prezzo,base.prezzo),2,true],
+    ["Volume complessivo","tonnellate",corrente.volume,base.volume,
+      omogeneo?delta(corrente.volume,base.volume):null,0,false],
+    ["Valore ricostruito","euro",corrente.valore,base.valore,
+      omogeneo?delta(corrente.valore,base.valore):null,0,false]
+  ];
+
+  var html='<table class="pir-tabella"><caption>Periodo selezionato '+
+    etichettaBreve(selezione.dal)+" – "+etichettaBreve(selezione.al)+" ("+corrente.settimane+
+    " settimane complete) contro "+etichettaBreve(rif.dal)+" – "+etichettaBreve(rif.al)+
+    " ("+base.settimane+")</caption><thead><tr><th>Grandezza</th><th>Selezionato</th>"+
+    "<th>Riferimento</th><th>Differenza</th><th>Variazione</th></tr></thead><tbody>";
+
+  righe.forEach(function(r){
+    var differenza=(r[2]!==null&&r[3]!==null)?r[2]-r[3]:null;
+    if(r[0]!=="Prezzo medio ponderato" && !omogeneo){ differenza=null; }
+    html+="<tr><td>"+r[0]+" <span style='color:var(--tenue)'>"+r[1]+"</span></td>"+
+      '<td class="pir-forte">'+num(r[2],r[5])+"</td><td>"+num(r[3],r[5])+"</td><td>"+
+      (differenza===null?"n.d.":segno(differenza,r[5]))+"</td><td>"+
+      (r[4]===null?"n.d.":segno(r[4],1)+"%")+"</td></tr>";
+  });
+  html+="</tbody></table>";
+
+  if(!omogeneo){
+    html+='<p class="pir-nota">I due periodi contengono un numero diverso di settimane complete ('+
+      corrente.settimane+" contro "+base.settimane+"). Il prezzo medio resta confrontabile perché "+
+      "ponderato, i totali no: la loro variazione percentuale non viene calcolata.</p>";
+  }
+  if(!corrente.ponderato && corrente.settimane){
+    html+='<p class="pir-nota">Volumi assenti in alcune settimane: il prezzo del periodo è una media '+
+      "semplice, non ponderata.</p>";
+  }
+  html+='<p class="pir-didascalia">Il valore ricostruito è la somma di prezzo per volume. Non è un dato '+
+    "pubblicato dalla fonte né una conferma indipendente dell'andamento: è la stessa informazione dei "+
+    "due numeri sopra, moltiplicata.</p>";
+
+  document.getElementById("pir-tabella-confronto").innerHTML=html;
+}
+
+function riferimento(){
+  var tutte=P.storico.map(function(o){return o.periodo;});
+  var da=tutte.indexOf(selezione.dal), a=tutte.indexOf(selezione.al);
+  var lunghezza=a-da+1;
+
+  if(paragone==="precedente"){
+    var fine=Math.max(0,da-1);
+    var inizio=Math.max(0,fine-lunghezza+1);
+    return {dal:tutte[inizio],al:tutte[fine]};
+  }
+  if(paragone==="anno"){
+    var indietro=52;
+    return {dal:tutte[Math.max(0,da-indietro)],al:tutte[Math.max(0,a-indietro)]};
+  }
+  var dal=document.getElementById("pir-rif-dal").value;
+  var al=document.getElementById("pir-rif-al").value;
+  return {
+    dal: dal?versoSettimana(new Date(dal)):tutte[Math.max(0,da-52)],
+    al: al?versoSettimana(new Date(al)):tutte[Math.max(0,a-52)]
+  };
+}
+
+function scriviLavorazioni(){
+  var select=document.getElementById("pir-lavorazione");
+  if(!select) return;
+  var rese=P.rese||[];
+  select.innerHTML=rese.length
+    ? rese.map(function(r,i){ return '<option value="'+r.resa+'"'+(i===0?" selected":"")+'>'+r.etichetta+" · "+r.resa+"%</option>"; }).join("")
+      +'<option value="">altro (imposto la resa a mano)</option>'
+    : '<option value="">resa a mano</option>';
+  if(rese.length) document.getElementById("pir-resa").value=rese[0].resa;
+  if(!select.getAttribute("data-collegato")){
+    select.setAttribute("data-collegato","1");
+    select.addEventListener("change",function(){
+      if(select.value){ document.getElementById("pir-resa").value=select.value; }
+      scriviCalcolo();
+    });
+    var base=document.getElementById("pir-base-resa");
+    base.addEventListener("change",function(){
+      var trasporto=document.getElementById("pir-trasporto");
+      if(base.value==="destino"){ trasporto.setAttribute("data-prima",trasporto.value); trasporto.value="0"; trasporto.disabled=true; }
+      else{ trasporto.disabled=false; if(trasporto.getAttribute("data-prima")) trasporto.value=trasporto.getAttribute("data-prima"); }
+      scriviCalcolo();
+    });
+  }
+}
+
+function scriviCalcolo(){
+  function leggi(id,predefinito){
+    var valore=parseFloat(document.getElementById(id).value);
+    return isNaN(valore)?predefinito:valore;
+  }
+  var resa=Math.min(400,Math.max(1,leggi("pir-resa",100)));   // il baccalà dissalato rende più del 100%
+  var glassatura=Math.min(60,Math.max(0,leggi("pir-glassatura",0)));
+  var esito=costoADestino(
+    leggi("pir-base",P.prezzo_eur_kg),
+    Math.max(0,leggi("pir-maggiorazione",0)),
+    Math.max(0,leggi("pir-trasporto",0)),
+    Math.max(0,leggi("pir-altri",0)),
+    glassatura, resa
+  );
+  document.getElementById("pir-esito-utile").innerHTML=
+    num(esito.utile,2)+"<span>€/kg utile</span>";
+  document.getElementById("pir-passi").innerHTML=esito.passi.map(function(p){
+    return "<li><span>"+p[0]+"</span><span>"+num(p[1],2)+"</span></li>";
+  }).join("");
+}
+
+function scriviMetodo(){
+  var s=P.serie;
+  document.getElementById("pir-perimetro").innerHTML=
+    "<p>"+s.indicatore+" — "+s.fase+". "+s.mercato+".</p>"+
+    "<p>"+s.note+"</p>"+
+    "<p>Prodotto: "+s.conservazione.toLowerCase()+", "+s.pezzatura.toLowerCase()+
+    ". Unità della fonte: "+s.unita_origine+"; la conversione in euro è nostra, "+
+    "con il cambio di riferimento BCE medio della stessa settimana, indicativo e non "+
+    "applicabile alle transazioni.</p>";
+
+  document.getElementById("pir-provenienza").innerHTML=
+    "<dt>Fonte</dt><dd><a href='"+s.fonte_url+"' rel='noopener'>"+s.fonte+"</a></dd>"+
+    "<dt>Licenza</dt><dd><a href='"+s.licenza_url+"' rel='noopener'>"+s.licenza+"</a></dd>"+
+    "<dt>Elaborazione</dt><dd>"+s.elaborazione+"</dd>"+
+    "<dt>Frequenza</dt><dd>"+s.frequenza+", pubblicazione della fonte il mercoledi mattina</dd>"+
+    "<dt>Ultimo periodo</dt><dd>"+P.ultimo_periodo+" ("+P.ultimo_periodo_esteso+")</dd>"+
+    "<dt>Pagina aggiornata</dt><dd>"+D.generato_il.slice(0,16).replace("T"," ")+" UTC</dd>";
+
+  var revisioni=P.revisioni_recenti||[];
+  document.getElementById("pir-revisioni").innerHTML= revisioni.length
+    ? "<p>Le statistiche del commercio estero vengono riviste. Queste sono le correzioni registrate "+
+      "sulle settimane già pubblicate.</p>"+
+      "<table class='pir-tabella'><thead><tr><th>Settimana</th><th>Prima</th><th>Dopo</th>"+
+      "<th>Rilevata</th></tr></thead><tbody>"+
+      revisioni.map(function(r){
+        return "<tr><td>"+r.periodo+"</td><td>"+num(r.da,2)+"</td><td>"+num(r.a,2)+
+          "</td><td>"+r.rilevata_il+"</td></tr>";
+      }).join("")+"</tbody></table>"
+    : "<p>Nessuna revisione registrata sulle settimane già pubblicate.</p>";
+
+  var diario=(D.diario||[]).slice(0,4).map(function(e){
+    return e.quando+" · "+e.fonte+" · "+e.esito+" ("+e.nuove+" nuove, "+e.riviste+" riviste)";
+  }).join("<br>");
+  document.getElementById("pir-piede").innerHTML=
+    "Dati: "+s.fonte+", "+s.licenza+", con elaborazioni di Pesceinrete. "+
+    "Cambi: Banca centrale europea, valori di riferimento. "+
+    "Se un controllo di qualità non passa resta pubblicata l'ultima versione valida.<br><br>"+
+    "<span style='color:var(--tenue)'>Ultimi aggiornamenti<br>"+diario+"</span>";
+}
+
+function scriviSchema(){
+  var s=P.serie;
+  document.getElementById("pir-schema").textContent=JSON.stringify({
+    "@context":"https://schema.org",
+    "@type":"Dataset",
+    "name":P.titolo_pagina,
+    "description":P.descrizione_pagina,
+    "temporalCoverage":P.storico[0].periodo.slice(0,4)+"/"+P.ultimo_periodo.slice(0,4),
+    "isAccessibleForFree":true,
+    "license":s.licenza_url,
+    "creator":{"@type":"Organization","name":"Pesceinrete"},
+    "isBasedOn":s.fonte_url,
+    "variableMeasured":[
+      {"@type":"PropertyValue","name":"Prezzo medio all'esportazione","unitText":"EUR/kg",
+       "value":P.prezzo_eur_kg},
+      {"@type":"PropertyValue","name":"Volume esportato","unitText":"tonnellate",
+       "value":P.volume_tonnellate}
+    ],
+    "dateModified":D.generato_il.slice(0,10)
+  });
+}
+
+function scriviStato(){
+  var fascia=document.getElementById("pir-stato");
+  if(D.stato==="in linea"){ fascia.hidden=true; return; }
+  fascia.hidden=false;
+  fascia.innerHTML='<div class="pir-fascia"><strong>Dati dimostrativi.</strong> '+
+    "Questa pagina mostra una serie inventata, utile solo a provare il funzionamento. "+
+    "Non usarla per decisioni commerciali: diventerà reale al primo collegamento con la fonte.</div>";
+}
+
+/* ====================================================================
+   CSV
+   ==================================================================== */
+function scaricaCsv(){
+  var s=P.serie;
+  var righe=[
+    "# "+P.nome+" — "+s.indicatore,
+    "# Fonte: "+s.fonte+" ("+s.fonte_url+")",
+    "# Licenza: "+s.licenza+" ("+s.licenza_url+")",
+    "# Elaborazione Pesceinrete: conversione in euro al cambio BCE medio della stessa settimana",
+    "# Perimetro: "+s.conservazione+", "+s.pezzatura+", "+s.fase,
+    "# Periodo estratto: "+selezione.dal+" - "+selezione.al,
+    "# Stato dati: "+D.stato+" — estratto il "+new Date().toISOString().slice(0,10),
+    "settimana;inizio;fine;prezzo_eur_kg;prezzo_valuta_origine;cambio;tonnellate"
+  ];
+  serieSelezionata().forEach(function(o){
+    var lunedi=settimanaVerso(o.periodo);
+    var domenica=new Date(lunedi); domenica.setUTCDate(lunedi.getUTCDate()+6);
+    righe.push([o.periodo,iso(lunedi),iso(domenica),
+      o.eur===null?"":String(o.eur).replace(".",","),
+      o.origine===null?"":String(o.origine).replace(".",","),
+      o.cambio===null?"":String(o.cambio).replace(".",","),
+      o.tonnellate===null?"":o.tonnellate].join(";"));
+  });
+  var blob=new Blob(["\ufeff"+righe.join("\n")],{type:"text/csv;charset=utf-8"});
+  var collegamento=document.createElement("a");
+  collegamento.href=URL.createObjectURL(blob);
+  collegamento.download="pesceinrete-"+P.id+"-"+selezione.dal+"-"+selezione.al+".csv";
+  document.body.appendChild(collegamento);
+  collegamento.click();
+  document.body.removeChild(collegamento);
+  URL.revokeObjectURL(collegamento.href);
+}
+
+/* ====================================================================
+   Interazione
+   ==================================================================== */
+function applicaFinestra(settimane){
+  var tutte=P.storico.map(function(o){ return o.periodo; });
+  var fine=tutte.length-1;
+  var inizio=settimane?Math.max(0,fine-settimane+1):0;
+  selezione.dal=tutte[inizio];
+  selezione.al=tutte[fine];
+  document.getElementById("pir-dal").value=iso(settimanaVerso(selezione.dal));
+  document.getElementById("pir-al").value=iso(settimanaVerso(selezione.al));
+}
+
+function gruppo(selettore, attributo, azione){
+  Array.prototype.forEach.call(document.querySelectorAll(selettore),function(bottone){
+    bottone.addEventListener("click",function(){
+      Array.prototype.forEach.call(document.querySelectorAll(selettore),function(altro){
+        altro.setAttribute("aria-pressed",String(altro===bottone));
+      });
+      azione(bottone.getAttribute(attributo));
+    });
+  });
+}
+
+function aggiorna(){
+  disegnaStorico();
+  scriviConfronto();
+  scriviIndirizzo();
+}
+
+function applicaVista(nuova, scorriA){
+  vista=(nuova==="completa")?"completa":"essenziale";
+  document.querySelector(".pir-mercati").setAttribute("data-vista",vista);
+  try{ localStorage.setItem("pir-vista",vista); }catch(e){}
+  if(scorriA){
+    var bersaglio=document.getElementById(scorriA);
+    if(bersaglio && bersaglio.scrollIntoView) bersaglio.scrollIntoView({behavior:"smooth",block:"start"});
+  }
+  Array.prototype.forEach.call(document.querySelectorAll("[data-vista]"),function(b){
+    if(b.tagName==="BUTTON") b.setAttribute("aria-pressed",String(b.getAttribute("data-vista")===vista));
+  });
+  Array.prototype.forEach.call(document.querySelectorAll(".pir-nav a"),function(a){
+    var destinazione=document.querySelector(a.getAttribute("href"));
+    a.hidden=!!(destinazione && destinazione.getAttribute("data-livello")==="2" && vista==="essenziale");
+  });
+  scriviIndirizzo();
+  // I grafici nascosti non hanno dimensioni: si ridisegnano quando la vista
+  // si apre. Ma solo se il prodotto è già caricato: all'avvio la vista
+  // viene applicata prima dei dati (e la scelta "completa" può arrivare
+  // dalla memoria del browser di una visita precedente).
+  if(vista==="completa" && P) disegnaStorico();
+}
+
+function collega(){
+  var attesa=null;
+  window.addEventListener("resize",function(){
+    clearTimeout(attesa);
+    attesa=setTimeout(function(){ if(P){ disegnaBanda(); disegnaStorico(); disegnaFlussi(); } },180);
+  });
+  Array.prototype.forEach.call(document.querySelectorAll("button[data-vista]"),function(b){
+    b.addEventListener("click",function(){ applicaVista(b.getAttribute("data-vista"), b.getAttribute("data-scorri")); });
+  });
+  gruppo("[data-misura]","data-misura",function(valore){ misura=valore; disegnaStorico(); });
+  gruppo("[data-finestra]","data-finestra",function(valore){
+    applicaFinestra(parseInt(valore,10)); aggiorna();
+  });
+  gruppo("[data-paragone]","data-paragone",function(valore){
+    paragone=valore;
+    var libero=valore==="libero";
+    document.getElementById("pir-campo-rif-dal").hidden=!libero;
+    document.getElementById("pir-campo-rif-al").hidden=!libero;
+    scriviConfronto();
+  });
+
+  ["pir-dal","pir-al"].forEach(function(id){
+    document.getElementById(id).addEventListener("change",function(){
+      var dal=document.getElementById("pir-dal").value;
+      var al=document.getElementById("pir-al").value;
+      if(!dal||!al) return;
+      var primo=P.storico[0].periodo, ultimo=P.storico[P.storico.length-1].periodo;
+      var a=versoSettimana(new Date(dal)), b=versoSettimana(new Date(al));
+      if(a>b){ var scambio=a; a=b; b=scambio; }
+      selezione.dal=a<primo?primo:a;
+      selezione.al=b>ultimo?ultimo:b;
+      Array.prototype.forEach.call(document.querySelectorAll("[data-finestra]"),function(bottone){
+        bottone.setAttribute("aria-pressed","false");
+      });
+      aggiorna();
+    });
+  });
+
+  ["pir-rif-dal","pir-rif-al"].forEach(function(id){
+    document.getElementById(id).addEventListener("change",scriviConfronto);
+  });
+
+  ["pir-base","pir-maggiorazione","pir-trasporto","pir-altri","pir-glassatura","pir-resa"]
+    .forEach(function(id){
+      document.getElementById(id).addEventListener("input",scriviCalcolo);
+    });
+
+  document.getElementById("pir-csv").addEventListener("click",scaricaCsv);
+  var bg=document.getElementById("pir-scarica-grafico"); if(bg) bg.addEventListener("click",scaricaGrafico);
+  var bl=document.getElementById("pir-copia-link"); if(bl) bl.addEventListener("click",copiaLink);
+}
+
+/* Legge una variabile per usarla dentro l'SVG, che non eredita da solo.
+   Se il browser non restituisce un colore utilizzabile si usa il ripiego:
+   meglio un grafico con i colori predefiniti che un grafico invisibile. */
+function coloreVariabile(nome, ripiego){
+  var radice=document.querySelector(".pir-mercati");
+  if(!radice||!window.getComputedStyle) return ripiego;
+  var valore=((getComputedStyle(radice).getPropertyValue(nome))||"").trim();
+  return /^(#|rgb|hsl)/i.test(valore) ? valore : ripiego;
+}
+
+/* ====================================================================
+   Azioni: grafico in PNG, collegamento alla vista
+   ==================================================================== */
+function scaricaGrafico(){
+  var svg=document.querySelector("#pir-banda svg");
+  if(!svg) return;
+  var clone=svg.cloneNode(true);
+  // i colori dei font e delle linee sono già scritti nell'SVG; aggiungo il carattere
+  clone.setAttribute("xmlns","http://www.w3.org/2000/svg");
+  clone.setAttribute("style","font-family:Manrope,Arial,sans-serif;background:#fff");
+  var vb=(svg.getAttribute("viewBox")||"0 0 680 300").split(" ").map(Number);
+  var scala=2, l=vb[2], a=vb[3]+44;
+  var intest=document.createElementNS("http://www.w3.org/2000/svg","text");
+  intest.setAttribute("x",vb[0]+8); intest.setAttribute("y",vb[1]+vb[3]+30);
+  intest.setAttribute("font-size","11"); intest.setAttribute("fill","#6b7a90");
+  intest.textContent=P.nome+" · "+num(P.prezzo_eur_kg,2)+" €/kg · "+P.ultimo_periodo+" · Pesceinrete, "+P.serie.fonte;
+  clone.setAttribute("viewBox",vb[0]+" "+vb[1]+" "+l+" "+a);
+  clone.appendChild(intest);
+  var testo=new XMLSerializer().serializeToString(clone);
+  var url=URL.createObjectURL(new Blob([testo],{type:"image/svg+xml;charset=utf-8"}));
+  var img=new Image();
+  img.onload=function(){
+    var tela=document.createElement("canvas");
+    tela.width=l*scala; tela.height=a*scala;
+    var ctx=tela.getContext("2d");
+    ctx.fillStyle="#fff"; ctx.fillRect(0,0,tela.width,tela.height);
+    ctx.drawImage(img,0,0,tela.width,tela.height);
+    URL.revokeObjectURL(url);
+    var a2=document.createElement("a");
+    a2.download="pesceinrete-"+P.id+"-"+P.ultimo_periodo+".png";
+    a2.href=tela.toDataURL("image/png");
+    document.body.appendChild(a2); a2.click(); document.body.removeChild(a2);
+    esito("Grafico scaricato.");
+  };
+  img.onerror=function(){ esito("Non sono riuscito a generare l'immagine."); };
+  img.src=url;
+}
+function copiaLink(){
+  var indirizzo=window.location.href;
+  function fatto(){ esito("Link copiato."); }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(indirizzo).then(fatto,function(){ esito(indirizzo); });
+  }else{ esito(indirizzo); }
+}
+function esito(messaggio){
+  var e=document.getElementById("pir-azioni-esito");
+  if(!e) return;
+  e.textContent=messaggio;
+  clearTimeout(esito._t); esito._t=setTimeout(function(){ e.textContent=""; },3500);
+}
+
+/* ====================================================================
+   Avvio
+   ==================================================================== */
+function mostraProdotto(stato){
+  stato=stato||{};
+  document.title=P.titolo_pagina+" — Pesceinrete";
+  var descrizione=document.querySelector('meta[name="description"]');
+  if(descrizione) descrizione.setAttribute("content",P.descrizione_pagina);
+
+  var bottoneOrigine=document.getElementById("pir-bottone-origine");
+  var inEuro=P.serie.valuta_origine==="EUR";
+  if(bottoneOrigine){
+    bottoneOrigine.textContent="Prezzo "+P.serie.unita_origine;
+    bottoneOrigine.hidden=inEuro;
+  }
+  var bottoneVolume=document.querySelector('[data-misura="tonnellate"]');
+  if(bottoneVolume) bottoneVolume.hidden=!P.con_volumi;
+  if((inEuro && misura==="origine")||(!P.con_volumi && misura==="tonnellate")){
+    misura="eur";
+    Array.prototype.forEach.call(document.querySelectorAll("[data-misura]"),function(b){
+      b.setAttribute("aria-pressed",String(b.getAttribute("data-misura")==="eur"));
+    });
+  }
+
+  // Il blocco statico viene inserito dal server per la specie iniziale; al
+  // cambio di specie si sostituisce con quello della specie mostrata.
+  var statico=document.getElementById("pir-sintesi-statica");
+  if(statico && P.sintesi_html) statico.innerHTML=P.sintesi_html;
+
+  scriviApertura();
+  ultimaVisita();
+  disegnaBanda();
+  disegnaFlussi();
+  scriviBollettino();
+
+  if(stato.dal && stato.al){
+    selezione.dal=stato.dal; selezione.al=stato.al;
+    document.getElementById("pir-dal").value=iso(settimanaVerso(selezione.dal));
+    document.getElementById("pir-al").value=iso(settimanaVerso(selezione.al));
+  }else{
+    applicaFinestra(52);
+  }
+
+  document.getElementById("pir-base").value=P.prezzo_eur_kg;
+  scriviLavorazioni();
+  scriviCalcolo();
+  scriviMetodo();
+  scriviSchema();
+  aggiorna();
+}
+
+/* L'indice (mercati.json) è piccolo e contiene una riga per specie; il
+   dettaglio di ciascuna sta in un file a parte, caricato solo quando
+   serve. Dieci specie non devono costare dieci volte il peso di una. */
+var CACHE_PRODOTTI={};
+
+function urlProdotto(id){
+  var base=window.PESCEINRETE_URL_DATI||"./data/mercati.json";
+  return base.replace(/mercati(\.en)?\.json/,"prodotti/"+id+"$1.json");
+}
+
+function caricaProdotto(id, poi){
+  if(window.PESCEINRETE_PRODOTTI && window.PESCEINRETE_PRODOTTI[id]){
+    poi(window.PESCEINRETE_PRODOTTI[id]); return;
+  }
+  if(CACHE_PRODOTTI[id]){ poi(CACHE_PRODOTTI[id]); return; }
+  fetch(urlProdotto(id),{cache:"no-cache"})
+    .then(function(r){ if(!r.ok) throw new Error("risposta "+r.status); return r.json(); })
+    .then(function(prodotto){ CACHE_PRODOTTI[id]=prodotto; poi(prodotto); })
+    .catch(function(e){ errore("Il dettaglio del prodotto non è stato caricato ("+e.message+")."); });
+}
+
+function avvia(documento){
+  D=documento;
+  var stato=leggiIndirizzo();
+  var richiesto=stato.p||window.PESCEINRETE_PRODOTTO||D.prodotti[0].id;
+  var voce=D.prodotti.filter(function(x){ return x.id===richiesto; })[0]||D.prodotti[0];
+  if(stato.m==="eur"||stato.m==="origine"||stato.m==="tonnellate"){
+    misura=stato.m;
+    Array.prototype.forEach.call(document.querySelectorAll("[data-misura]"),function(b){
+      b.setAttribute("aria-pressed",String(b.getAttribute("data-misura")===misura));
+    });
+  }
+  document.querySelector(".pir-mercati").setAttribute("data-script","1");
+  scriviStato();
+  var iscrizione=document.getElementById("pir-iscrizione");
+  if(iscrizione && window.PESCEINRETE_URL_ISCRIZIONE){
+    document.getElementById("pir-modulo-iscrizione").setAttribute("action",window.PESCEINRETE_URL_ISCRIZIONE);
+    iscrizione.hidden=false;
+  }
+  scriviPanoramica();
+  collega();
+  var ricordata=null;
+  try{ ricordata=localStorage.getItem("pir-vista"); }catch(e){}
+  applicaVista(stato.v||ricordata||"essenziale");
+  caricaProdotto(voce.id,function(prodotto){
+    P=prodotto;
+    scriviSelettore();
+    mostraProdotto(stato);
+  });
+}
+
+function errore(messaggio){
+  document.getElementById("pir-stato").hidden=false;
+  document.getElementById("pir-stato").innerHTML=
+    '<div class="pir-fascia"><strong>Dati non disponibili.</strong> '+messaggio+
+    " Riprova fra qualche minuto oppure segnala il problema alla redazione.</div>";
+}
+
+if(window.PESCEINRETE_DATI){
+  avvia(window.PESCEINRETE_DATI);
+}else{
+  fetch(window.PESCEINRETE_URL_DATI||"./data/mercati.json",{cache:"no-cache"})
+    .then(function(risposta){
+      if(!risposta.ok) throw new Error("risposta "+risposta.status);
+      return risposta.json();
+    })
+    .then(avvia)
+    .catch(function(e){ errore("Il file dei dati non è stato caricato ("+e.message+")."); });
+}
+})();
+</script>
+</body>
+</html>
