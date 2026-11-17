@@ -1,0 +1,164 @@
+name: Aggiornamento dei dati
+
+# Tempestività senza lavoro manuale: il ciclo controlla le fonti più
+# volte al giorno e pubblica solo quando una di esse ha emesso qualcosa.
+# I controlli a vuoto costano pochi secondi e non producono commit.
+#
+# Orari scelti sugli orari delle fonti (UTC):
+#   06:20  SSB pubblica il mercoledi alle 08:00 ora norvegese; in estate
+#          sono le 06:00 UTC, in inverno le 07:00. Il primo controllo prende
+#          il caso estivo, il secondo quello invernale.
+#   07:20  vedi sopra
+#   11:20  Eurostat aggiorna Comext in mattinata
+#   15:40  la BCE pubblica i cambi verso le 16:00 CET
+on:
+  schedule:
+    - cron: "20 6 * * *"
+    - cron: "20 7 * * *"
+    - cron: "20 11 * * *"
+    - cron: "40 15 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: aggiornamento-dati
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  aggiorna:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Segna l'inizio
+        id: inizio
+        run: echo "istante=$(date -u +%Y-%m-%dT%H:%M:%S)" >> $GITHUB_OUTPUT
+
+      - name: Verifica i calcoli prima di toccare i dati
+        run: pip install pytest pillow -q && python -m pytest tests/ -q
+
+      # Ogni fonte è indipendente: se una non risponde le altre proseguono.
+      # L'errore resta registrato nel diario e finisce nel resoconto.
+      - name: Cambi di riferimento BCE
+        continue-on-error: true
+        run: python ingest/bce_cambi.py --db dati/archivio.sqlite --valuta NOK
+
+      - name: Prezzi e volumi SSB
+        continue-on-error: true
+        run: python ingest/ssb_laks.py --db dati/archivio.sqlite
+
+      - name: Importazioni italiane Eurostat Comext
+        continue-on-error: true
+        run: python ingest/eurostat_comext.py --db dati/archivio.sqlite
+
+      # Quotazioni giornaliere di Rungis: il passo è attivo solo per le
+      # serie con un indirizzo in config/rnm.json. La media settimanale
+      # la costruisce il generatore della pagina.
+      - name: Quotazioni RNM Rungis
+        continue-on-error: true
+        run: python ingest/rnm_rungis.py --db dati/archivio.sqlite
+
+      - name: C'è qualcosa di nuovo?
+        id: novita
+        run: python strumenti/novita.py --db dati/archivio.sqlite --dal ${{ steps.inizio.outputs.istante }}
+
+      - name: Ricostruisci pagina, sintesi e bollettino, in italiano e inglese
+        if: steps.novita.outputs.novita == 'si'
+        run: |
+          python costruisci_dati_sito.py --db dati/archivio.sqlite --uscita web/data
+          python strumenti/componi_pagina.py
+          python strumenti/traduci_pagina.py
+          python strumenti/genera_anteprime_social.py
+          python strumenti/genera_newsletter.py
+          python strumenti/valuta_avvisi.py
+
+      - name: Avvisi redazionali
+        id: avvisi
+        if: steps.novita.outputs.novita == 'si'
+        run: python strumenti/valuta_avvisi.py --dati web/data
+
+      - name: Collaudo della pagina nelle due lingue
+        if: steps.novita.outputs.novita == 'si'
+        run: |
+          npm install jsdom --silent --no-fund --no-audit
+          python strumenti/costruisci_anteprima.py
+          python strumenti/costruisci_anteprima.py --lingua en
+          NODE_PATH=$PWD/node_modules node tests/collauda_pagina.js
+          LINGUA=en NODE_PATH=$PWD/node_modules node tests/collauda_pagina.js
+
+      - name: Cruscotto della redazione
+        if: steps.novita.outputs.novita == 'si'
+        run: python strumenti/cruscotto_redazione.py --db dati/archivio.sqlite
+
+      - name: Conserva cruscotto e bozza del bollettino
+        if: steps.novita.outputs.novita == 'si'
+        uses: actions/upload-artifact@v4
+        with:
+          name: redazione-${{ github.run_number }}
+          path: |
+            redazione/cruscotto.html
+            web/bollettini/
+            web/newsletter/
+          retention-days: 90
+
+      # Pubblica solo se il collaudo è passato: se qualcosa si rompe,
+      # online resta l'ultima versione valida e il commit non avviene.
+      - name: Pubblica
+        if: steps.novita.outputs.novita == 'si'
+        run: |
+          git config user.name "Aggiornamento dati"
+          git config user.email "redazione@pesceinrete.com"
+          git add dati/archivio.sqlite web/data/ web/bollettini/ web/newsletter/ web/dati-mercati.en.html
+          git commit -m "Dati aggiornati $(date -u +%Y-%m-%d\ %H:%M) — ${{ steps.novita.outputs.riassunto }}"
+          git push
+
+      # Avviso opzionale: basta un segreto NOTIFICA_WEBHOOK con l'indirizzo
+      # di un webhook (Slack, Teams, Make, Zapier o una casella email
+      # tramite un servizio qualunque). Se il segreto manca, il passo tace.
+      - name: Avvisa la redazione
+        if: always() && (steps.novita.outputs.novita == 'si' || steps.novita.outputs.errori != '0')
+        env:
+          WEBHOOK: ${{ secrets.NOTIFICA_WEBHOOK }}
+          RIASSUNTO: ${{ steps.novita.outputs.riassunto }}
+          AVVISI_TESTO: ${{ steps.avvisi.outputs.avvisi_testo }}
+          ESITO: ${{ job.status }}
+          COLLEGAMENTO: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          [ -z "$WEBHOOK" ] && echo "Nessun webhook configurato." && exit 0
+          python - <<'FINE'
+          import json, os, urllib.request
+          avvisi = os.environ.get("AVVISI_TESTO", "")
+          testo = (f"Dati e mercati — {os.environ['RIASSUNTO']} (esito: {os.environ['ESITO']}). "
+                   + (f"AVVISI: {avvisi}. " if avvisi else "")
+                   + f"Cruscotto, newsletter e bozza del bollettino: {os.environ['COLLEGAMENTO']}")
+          richiesta = urllib.request.Request(
+              os.environ["WEBHOOK"],
+              data=json.dumps({"text": testo}).encode("utf-8"),
+              headers={"Content-Type": "application/json"},
+          )
+          urllib.request.urlopen(richiesta, timeout=20)
+          FINE
+
+      - name: Resoconto
+        if: always()
+        run: |
+          echo "### Aggiornamento dati — ${{ steps.novita.outputs.riassunto }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          python - <<'FINE' >> $GITHUB_STEP_SUMMARY
+          import sqlite3, pathlib
+          percorso = pathlib.Path("dati/archivio.sqlite")
+          if not percorso.exists():
+              print("Archivio non trovato."); raise SystemExit
+          db = sqlite3.connect(percorso); db.row_factory = sqlite3.Row
+          print("| Fonte | Esito | Nuove | Riviste | Note |")
+          print("|---|---|---|---|---|")
+          for r in db.execute("SELECT * FROM esecuzioni ORDER BY avviata_il DESC LIMIT 6"):
+              print(f"| {r['fonte']} | {r['esito']} | {r['nuove']} | {r['riviste']} | "
+                    f"{(r['messaggio'] or '')[:140]} |")
+          FINE
