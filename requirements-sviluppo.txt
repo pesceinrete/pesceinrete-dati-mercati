@@ -1,0 +1,4 @@
+# L'ingestion e la generazione del sito usano la libreria standard.
+# Pillow serve solo alle immagini di anteprima per la condivisione.
+pytest>=8.0
+pillow>=10.0

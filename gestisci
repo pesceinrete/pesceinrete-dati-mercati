@@ -1,0 +1,166 @@
+#!/usr/bin/env bash
+#
+# Comando unico della sezione "Dati e mercati".
+#
+#   ./gestisci prova        dati inventati + anteprima, per vedere com'e'
+#   ./gestisci controlla    interroga le fonti senza scrivere niente
+#   ./gestisci reale        primo caricamento dei dati veri
+#   ./gestisci aggiorna     scarica, ricostruisce, collauda (il ciclo del cron)
+#   ./gestisci sito         ricostruisce solo i file della pagina
+#   ./gestisci test         tutti i controlli
+#   ./gestisci pacchetto    prepara la cartella da caricare su WordPress
+#   ./gestisci plugin       crea lo zip del plugin WordPress (installazione dal pannello)
+#   ./gestisci calibra      quante volte l'anno scattano le regole, sulla storia in archivio
+#   ./gestisci pulisci      cancella archivio e file generati
+#
+set -euo pipefail
+cd "$(dirname "$0")"
+
+DB="dati/archivio.sqlite"
+USCITA="web/data"
+PY="${PYTHON:-python3}"
+
+titolo() { printf "\n\033[1m%s\033[0m\n" "$1"; }
+
+case "${1:-aiuto}" in
+
+  prova)
+    titolo "Dati dimostrativi"
+    $PY strumenti/genera_dati_dimostrativi.py --db "$DB"
+    $PY costruisci_dati_sito.py --db "$DB" --uscita "$USCITA"
+    $PY strumenti/cruscotto_redazione.py --db "$DB"
+    $PY strumenti/componi_pagina.py
+    $PY strumenti/traduci_pagina.py
+    $PY strumenti/genera_anteprime_social.py
+    $PY strumenti/genera_newsletter.py
+    $PY strumenti/valuta_avvisi.py
+    $PY strumenti/costruisci_anteprima.py
+    $PY strumenti/costruisci_anteprima.py --lingua en
+    echo
+    echo "Aprire web/anteprima-dati-mercati.html (italiano) o web/anteprima-dati-mercati.en.html"
+    echo "I dati sono inventati: la pagina lo dichiara finché esiste dati/DIMOSTRATIVO"
+    ;;
+
+  controlla)
+    titolo "Interrogazione delle fonti, senza scrivere"
+    $PY ingest/ssb_laks.py --db "$DB" --controllo
+    $PY ingest/eurostat_comext.py --db "$DB" --controllo
+    $PY ingest/rnm_rungis.py --db "$DB" --controllo || true
+    echo
+    echo "Se le etichette non vengono riconosciute, la fonte ha cambiato struttura:"
+    echo "aggiornare RICONOSCIMENTO in ingest/ssb_laks.py prima di caricare."
+    ;;
+
+  reale)
+    titolo "Primo caricamento dei dati veri"
+    rm -f dati/DIMOSTRATIVO
+    if [ -f "$DB" ]; then
+      echo "Archivio esistente trovato: verrà aggiornato, non sovrascritto."
+    fi
+    $PY ingest/bce_cambi.py --db "$DB" --valuta NOK
+    $PY ingest/ssb_laks.py --db "$DB"
+    $PY ingest/eurostat_comext.py --db "$DB" || echo "Comext non disponibile: si prosegue."
+    $PY ingest/rnm_rungis.py --db "$DB" || echo "RNM: indirizzi da compilare in config/rnm.json."
+    $PY costruisci_dati_sito.py --db "$DB" --uscita "$USCITA"
+    $PY strumenti/cruscotto_redazione.py --db "$DB"
+    echo
+    echo "Fatto. Da qui in poi ci pensa l'aggiornamento automatico."
+    ;;
+
+  aggiorna)
+    titolo "Ciclo di aggiornamento"
+    INIZIO=$(date -u +%Y-%m-%dT%H:%M:%S)
+    $PY -m pytest tests/ -q
+    $PY ingest/bce_cambi.py --db "$DB" --valuta NOK || true
+    $PY ingest/ssb_laks.py --db "$DB" || true
+    $PY ingest/eurostat_comext.py --db "$DB" || true
+    $PY ingest/rnm_rungis.py --db "$DB" || true
+    if $PY strumenti/novita.py --db "$DB" --dal "$INIZIO" | grep -q "novita=si"; then
+      $PY costruisci_dati_sito.py --db "$DB" --uscita "$USCITA"
+      $PY strumenti/componi_pagina.py
+      $PY strumenti/traduci_pagina.py
+      $PY strumenti/genera_anteprime_social.py
+      $PY strumenti/genera_newsletter.py
+      $PY strumenti/valuta_avvisi.py
+      $PY strumenti/cruscotto_redazione.py --db "$DB"
+      echo "Dati nuovi pubblicati."
+    else
+      echo "Nessuna novità: niente da ricostruire."
+    fi
+    ;;
+
+  sito)
+    titolo "Ricostruzione dei file della pagina"
+    $PY costruisci_dati_sito.py --db "$DB" --uscita "$USCITA"
+    $PY strumenti/componi_pagina.py
+    $PY strumenti/traduci_pagina.py
+    $PY strumenti/genera_anteprime_social.py
+    $PY strumenti/genera_newsletter.py
+    $PY strumenti/valuta_avvisi.py
+    $PY strumenti/costruisci_anteprima.py
+    $PY strumenti/costruisci_anteprima.py --lingua en
+    ;;
+
+  test)
+    titolo "Calcoli"
+    $PY -m pytest tests/ -q
+    titolo "Pagina"
+    if [ ! -d node_modules ]; then npm install jsdom --silent --no-fund --no-audit; fi
+    $PY strumenti/componi_pagina.py > /dev/null
+    $PY strumenti/traduci_pagina.py > /dev/null
+    $PY strumenti/costruisci_anteprima.py > /dev/null
+    $PY strumenti/costruisci_anteprima.py --lingua en > /dev/null
+    NODE_PATH="$PWD/node_modules" node tests/collauda_pagina.js
+    titolo "Pagina inglese"
+    LINGUA=en NODE_PATH="$PWD/node_modules" node tests/collauda_pagina.js | tail -1
+    ;;
+
+  pacchetto)
+    titolo "Cartella da caricare sul tema figlio"
+    rm -rf consegna && mkdir -p consegna/dati-mercati/data/prodotti consegna/inc
+    $PY strumenti/componi_pagina.py > /dev/null
+    $PY strumenti/traduci_pagina.py > /dev/null
+    cp web/dati-mercati.html web/dati-mercati.en.html consegna/dati-mercati/
+    cp "$USCITA"/mercati.json "$USCITA"/mercati.en.json "$USCITA"/sintesi-*.html consegna/dati-mercati/data/
+    cp "$USCITA"/prodotti/*.json consegna/dati-mercati/data/prodotti/
+    mkdir -p consegna/dati-mercati/data/social && cp "$USCITA"/social/*.png consegna/dati-mercati/data/social/
+    cp wordpress/pesceinrete-dati-mercati.php consegna/inc/
+    echo "Pronta in consegna/ ($(find consegna -type f | wc -l) file):"
+    find consegna -maxdepth 2 | sed 's/^/  /'
+    echo
+    echo "  dati-mercati/  ->  wp-content/themes/<tema-figlio>/dati-mercati/"
+    echo "  inc/           ->  wp-content/themes/<tema-figlio>/inc/"
+    ;;
+
+  plugin)
+    titolo "Plugin WordPress"
+    $PY strumenti/componi_pagina.py > /dev/null
+    $PY strumenti/traduci_pagina.py > /dev/null
+    rm -rf consegna/plugin && mkdir -p consegna/plugin/pesceinrete-dati-mercati/assets/data/prodotti
+    cp wordpress/plugin/pesceinrete-dati-mercati/pesceinrete-dati-mercati.php consegna/plugin/pesceinrete-dati-mercati/
+    cp web/dati-mercati.html web/dati-mercati.en.html consegna/plugin/pesceinrete-dati-mercati/assets/
+    cp "$USCITA"/mercati.json "$USCITA"/mercati.en.json "$USCITA"/sintesi-*.html consegna/plugin/pesceinrete-dati-mercati/assets/data/
+    cp "$USCITA"/prodotti/*.json consegna/plugin/pesceinrete-dati-mercati/assets/data/prodotti/
+    mkdir -p consegna/plugin/pesceinrete-dati-mercati/assets/data/social && cp "$USCITA"/social/*.png consegna/plugin/pesceinrete-dati-mercati/assets/data/social/
+    (cd consegna/plugin && rm -f ../pesceinrete-dati-mercati-plugin.zip && zip -qr ../pesceinrete-dati-mercati-plugin.zip pesceinrete-dati-mercati)
+    echo "Pronto: consegna/pesceinrete-dati-mercati-plugin.zip ($(du -h consegna/pesceinrete-dati-mercati-plugin.zip | cut -f1))"
+    echo "Si installa da Plugin -> Aggiungi nuovo -> Carica plugin."
+    ;;
+
+  calibra)
+    $PY strumenti/calibra_soglie.py --db "$DB" "${@:2}"
+    ;;
+
+  pulisci)
+    titolo "Pulizia"
+    rm -rf dati redazione consegna web/bollettini web/anteprima-dati-mercati.html
+    rm -rf "$USCITA"/mercati*.json "$USCITA"/sintesi-*.html "$USCITA"/prodotti "$USCITA"/social "$USCITA"/avvisi.json web/newsletter web/dati-mercati.en.html web/anteprima-*.html
+    find . -name __pycache__ -type d -exec rm -rf {} + 2>/dev/null || true
+    rm -rf .pytest_cache
+    echo "Archivio e file generati rimossi. Il codice resta."
+    ;;
+
+  *)
+    sed -n '3,15p' "$0" | sed 's/^# \{0,1\}//'
+    ;;
+esac

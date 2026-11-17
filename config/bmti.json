@@ -1,0 +1,9 @@
+{
+  "_nota": "Corrispondenza fra il nome del prodotto nel file esportato da BMTI (basta una parte del nome, minuscolo) e la serie del registro.",
+  "corrispondenze": {
+    "cozz": "bmti.ingrosso.cozze",
+    "mitil": "bmti.ingrosso.cozze",
+    "vongola verace": "bmti.ingrosso.vongole",
+    "vongole veraci": "bmti.ingrosso.vongole"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "_nota": "Indirizzi delle pagine prodotto RNM e colonna del prezzo medio. Le etichette seguono la dicitura delle mercuriali di Rungis (DAURADE Royale aquaculture 400-600g U.E., BAR aquaculture, POULPE, CREVETTE, CABILLAUD, THON albacore, ESPADON). Il confronto ignora maiuscole, accenti e barre nei calibri. Dopo il primo `python ingest/rnm_rungis.py --controllo` si correggono le etichette che non trovano la riga e, se serve, la colonna.",
+  "indirizzi": {
+    "rnm.rungis.orata.allevamento":   {"url": "https://rnm.franceagrimer.fr/prix?DAURADE",   "etichetta": "daurade royale aquaculture 400-600", "colonna_prezzo": 1},
+    "rnm.rungis.spigola.allevamento": {"url": "https://rnm.franceagrimer.fr/prix?BAR",       "etichetta": "bar aquaculture 400-600",             "colonna_prezzo": 1},
+    "rnm.rungis.polpo.congelato":     {"url": "https://rnm.franceagrimer.fr/prix?POULPE",    "etichetta": "poulpe congel",                        "colonna_prezzo": 1},
+    "rnm.rungis.gambero.congelato":   {"url": "https://rnm.franceagrimer.fr/prix?CREVETTE",  "etichetta": "crevette congel",                      "colonna_prezzo": 1},
+    "rnm.rungis.merluzzo.fresco":     {"url": "https://rnm.franceagrimer.fr/prix?CABILLAUD", "etichetta": "cabillaud",                            "colonna_prezzo": 1},
+    "rnm.rungis.tonno.pinna_gialla":  {"url": "https://rnm.franceagrimer.fr/prix?THON",      "etichetta": "thon albacore",                        "colonna_prezzo": 1},
+    "rnm.rungis.pesce_spada":         {"url": "https://rnm.franceagrimer.fr/prix?ESPADON",   "etichetta": "espadon",                              "colonna_prezzo": 1}
+  }
+}

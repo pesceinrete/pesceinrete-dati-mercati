@@ -1,0 +1,49 @@
+{
+  "_nota": "Rese indicative per lavorazione, in percentuale del peso acquistato. Valori di uso comune nel settore, da adeguare ai propri dati: ogni azienda ha le sue. Compaiono come scelte rapide nel calcolatore del costo a destino.",
+  "salmone": [
+    {"it": "Intero eviscerato (HOG), nessuna lavorazione", "en": "Head-on gutted (HOG), no processing", "resa": 100},
+    {"it": "Filetto con pelle, trim C", "en": "Skin-on fillet, trim C", "resa": 65},
+    {"it": "Filetto senza pelle, trim D/E", "en": "Skinless fillet, trim D/E", "resa": 58},
+    {"it": "Porzioni senza pelle", "en": "Skinless portions", "resa": 52}
+  ],
+  "orata": [
+    {"it": "Intera, nessuna lavorazione", "en": "Whole, no processing", "resa": 100},
+    {"it": "Intera eviscerata", "en": "Whole gutted", "resa": 88},
+    {"it": "Filetto con pelle", "en": "Skin-on fillet", "resa": 46}
+  ],
+  "spigola": [
+    {"it": "Intera, nessuna lavorazione", "en": "Whole, no processing", "resa": 100},
+    {"it": "Intera eviscerata", "en": "Whole gutted", "resa": 88},
+    {"it": "Filetto con pelle", "en": "Skin-on fillet", "resa": 45}
+  ],
+  "polpo": [
+    {"it": "Congelato intero, al netto della glassatura", "en": "Frozen whole, net of glaze", "resa": 100},
+    {"it": "Cotto", "en": "Cooked", "resa": 58}
+  ],
+  "gambero": [
+    {"it": "Intero con testa (HOSO)", "en": "Head-on shell-on (HOSO)", "resa": 100},
+    {"it": "Code con guscio (HLSO)", "en": "Headless shell-on (HLSO)", "resa": 65},
+    {"it": "Sgusciato e deveinato (PD)", "en": "Peeled and deveined (PD)", "resa": 52}
+  ],
+  "merluzzo": [
+    {"it": "Intero eviscerato", "en": "Head-on gutted", "resa": 100},
+    {"it": "Filetto senza pelle", "en": "Skinless fillet", "resa": 48},
+    {"it": "Baccalà dissalato, dal salato", "en": "Desalted cod, from salted", "resa": 130}
+  ],
+  "tonno": [
+    {"it": "Lombo", "en": "Loin", "resa": 100},
+    {"it": "Tranci dal lombo", "en": "Steaks from loin", "resa": 90}
+  ],
+  "pesce_spada": [
+    {"it": "Intero senza testa", "en": "Headless whole", "resa": 100},
+    {"it": "Tranci", "en": "Steaks", "resa": 70}
+  ],
+  "cozze": [
+    {"it": "Vive in rete", "en": "Live, netted", "resa": 100},
+    {"it": "Polpa cotta sgusciata", "en": "Cooked shucked meat", "resa": 22}
+  ],
+  "vongole": [
+    {"it": "Vive", "en": "Live", "resa": 100},
+    {"it": "Polpa cotta sgusciata", "en": "Cooked shucked meat", "resa": 18}
+  ]
+}

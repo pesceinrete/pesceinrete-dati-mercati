@@ -1,0 +1,12 @@
+{
+  "_nota": "Soglie delle regole del bollettino e della lettura stagionale. Valori iniziali fissati a giudizio; da ricalibrare con `python strumenti/calibra_soglie.py` dopo almeno un anno di dati veri, guardando quante volte l'anno scatta ogni regola.",
+  "stagionale": {"fascia_alta": 80, "fascia_bassa": 20, "finestra_settimane": 2, "anni": 5, "minimo_osservazioni": 12},
+  "bollettino": {
+    "variazione_minima_settimana": 1.0,
+    "movimento_abituale_minimo": 0.5,
+    "cambio_divergenza_minima": 0.8,
+    "volumi_fascia_alta": 90,
+    "volumi_fascia_bassa": 10
+  },
+  "controlli": {"salto_sospetto_percento": 35, "scarto_cruscotto_percento": 12}
+}
