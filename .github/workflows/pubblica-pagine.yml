@@ -1,54 +1,48 @@
-name: Sorveglianza del ciclo
+name: Pubblica i file della pagina su GitHub Pages
 
-# Parte da sola quando un'esecuzione del ciclo fallisce. Raccoglie il
-# registro, chiede al modello una diagnosi in italiano e, se c'è una
-# correzione sicura, la propone in una richiesta di modifica che la
-# redazione approva con un clic. Non tocca mai il ramo principale.
-#
-# Senza il segreto ANTHROPIC_API_KEY apre comunque una segnalazione con
-# l'estratto del registro.
+# Serve i file di web/ a un indirizzo stabile, così il sito li legge da
+# qui e nessuno deve più caricare niente via FTP. Si attiva da solo a ogni
+# aggiornamento dei dati. Prima volta: Settings → Pages → Source:
+# "GitHub Actions".
 on:
-  workflow_run:
-    workflows: ["Aggiornamento dei dati", "Primo caricamento dei dati veri"]
-    types: [completed]
+  push:
+    branches: [main, master]
+    paths: ["web/**"]
+  workflow_dispatch:
 
 permissions:
-  contents: write
-  issues: write
-  pull-requests: write
-  actions: read
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
 
 jobs:
-  diagnosi:
-    if: github.event.workflow_run.conclusion == 'failure'
+  pubblica:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Dipendenze di collaudo
-        run: pip install pytest pillow -q
-
-      - name: Registro dell'esecuzione fallita
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Pagina inglese e cartella da pubblicare
         run: |
-          gh run view ${{ github.event.workflow_run.id }} --log-failed > registro-fallito.txt 2>&1 || \
-          gh run view ${{ github.event.workflow_run.id }} --log > registro-fallito.txt 2>&1 || true
-          wc -l registro-fallito.txt
-
-      - name: Etichetta per le segnalazioni
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh label create sorveglianza --color F5C518 --description "Aperta dalla sorveglianza automatica" 2>/dev/null || true
-
-      - name: Diagnosi e proposta
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GITHUB_TOKEN: ${{ github.token }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          MODELLO_AI: ${{ vars.MODELLO_AI }}
-        run: python strumenti/sorveglianza.py --registro registro-fallito.txt --esecuzione ${{ github.event.workflow_run.id }}
+          pip install pillow -q
+          python strumenti/componi_pagina.py
+          python strumenti/traduci_pagina.py
+          python strumenti/genera_anteprime_social.py
+          mkdir -p pubblico
+          cp web/dati-mercati.html web/dati-mercati.en.html pubblico/
+          cp -r web/data pubblico/data
+          # intestazioni CORS non servono: GitHub Pages le manda da solo
+          echo "Pesceinrete — file di Dati e mercati" > pubblico/index.html
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: pubblico
+      - id: deploy
+        uses: actions/deploy-pages@v4
