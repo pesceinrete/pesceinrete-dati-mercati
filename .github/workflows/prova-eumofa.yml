@@ -1,0 +1,73 @@
+name: Prova EUMOFA
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  prova:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Scarica ed esamina i file EUMOFA
+        run: |
+          cat > prova_eumofa.py <<'PY'
+          """Prova: il file settimanale EUMOFA si scarica da GitHub senza browser?
+          Solo libreria standard. Non scrive nulla nel repository."""
+          import csv, io, os, sys, urllib.request, urllib.parse
+          from collections import Counter
+          
+          BASE = os.environ.get("EUMOFA_BASE", "https://dev-eumofa-bulk.s3.eu-west-1.amazonaws.com/")
+          ANNI = os.environ.get("EUMOFA_ANNI", "2026 2025").split()
+          ATTESE = ["year", "week", "issuer", "origin", "goods", "volume(Kg)", "value(EUR)"]
+          
+          def scarica(anno):
+              nome = f"{anno}_EU Import from third countries.csv"
+              url = BASE + urllib.parse.quote(nome)
+              req = urllib.request.Request(url, headers={"User-Agent": "pesceinrete-dati-mercati (+https://www.pesceinrete.com)"})
+              with urllib.request.urlopen(req, timeout=180) as r:
+                  return r.read(), r.headers.get("Last-Modified", "n.d.")
+          
+          def esamina(anno):
+              dati, modificato = scarica(anno)
+              righe = csv.reader(io.StringIO(dati.decode("utf-8", errors="replace")), delimiter="~")
+              intestazione = next(righe)
+              if intestazione != ATTESE:
+                  raise ValueError(f"intestazione inattesa: {intestazione}")
+              per_sett, italia = Counter(), 0
+              for r in righe:
+                  if len(r) != 7:
+                      continue
+                  per_sett[int(r[1])] += 1
+                  italia += r[2] == "Italy"
+              sett = sorted(per_sett)
+              tipica = sorted(per_sett.values())[len(per_sett) // 2]
+              # ultima settimana completa: l'ultima con almeno il 70% delle righe tipiche
+              complete = [s for s in sett if per_sett[s] >= 0.7 * tipica]
+              return {"anno": anno, "mb": len(dati) / 1e6, "righe": sum(per_sett.values()), "italia": italia,
+                      "ultima": sett[-1], "righe_ultima": per_sett[sett[-1]], "tipica": tipica,
+                      "ultima_completa": complete[-1], "modificato": modificato}
+          
+          def main():
+              out, ok = ["## Prova scaricamento EUMOFA", "",
+                         "| Anno | Esito | MB | Righe | Righe Italia | Ultima settimana | Ultima completa | Aggiornato alla fonte |",
+                         "|---|---|---|---|---|---|---|---|"], True
+              for a in ANNI:
+                  try:
+                      e = esamina(a)
+                      out.append(f"| {a} | OK | {e['mb']:.1f} | {e['righe']} | {e['italia']} | {e['ultima']} ({e['righe_ultima']} righe, tipiche {e['tipica']}) | {e['ultima_completa']} | {e['modificato']} |")
+                  except Exception as x:
+                      ok = False
+                      out.append(f"| {a} | ERRORE: {type(x).__name__}: {x} | | | | | | |")
+              out += ["", "**ESITO: " + ("RIUSCITO — lo scaricamento automatico funziona.**" if ok else "FALLITO — copiare questa tabella e inviarla.**")]
+              testo = "\n".join(out)
+              print(testo)
+              if os.environ.get("GITHUB_STEP_SUMMARY"):
+                  open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8").write(testo + "\n")
+              sys.exit(0 if ok else 1)
+          
+          main()
+          PY
+          python3 prova_eumofa.py
