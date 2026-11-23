@@ -15,6 +15,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   carica:
@@ -85,6 +86,15 @@ jobs:
           git add -A dati/ web/data/ web/bollettini/ web/newsletter/ web/dati-mercati.html web/dati-mercati.en.html
           git commit -m "Primo caricamento dei dati veri $(date -u +%Y-%m-%d)"
           git push
+
+      # Un salvataggio fatto da un workflow non fa partire la pubblicazione,
+      # e l'innesco "workflow_run" non va bene con deploy-pages (cerca i file
+      # nell'esecuzione sbagliata). Si avvia quindi la pubblicazione a mano,
+      # da qui: l'avvio manuale è permesso anche al token del workflow.
+      - name: Avvia la pubblicazione su GitHub Pages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pubblica-pagine.yml --repo "${{ github.repository }}" --ref "${{ github.ref_name }}"
 
       - name: Cruscotto
         uses: actions/upload-artifact@v4

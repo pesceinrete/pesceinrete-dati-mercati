@@ -5,16 +5,13 @@ name: Pubblica i file della pagina su GitHub Pages
 # aggiornamento dei dati. Prima volta: Settings → Pages → Source:
 # "GitHub Actions".
 #
-# Due inneschi, e servono entrambi: "push" per i file caricati a mano,
-# "workflow_run" per gli aggiornamenti automatici, perché un commit fatto
-# da un altro flusso di GitHub non fa partire l'innesco "push".
+# Due inneschi: "push" per i file caricati a mano, "workflow_dispatch"
+# per gli aggiornamenti automatici, che avviano questo flusso alla fine
+# (un commit fatto da un altro flusso di GitHub non fa partire "push").
 on:
   push:
     branches: [main, master]
     paths: ["web/**"]
-  workflow_run:
-    workflows: ["Aggiornamento dei dati", "Primo caricamento dei dati veri"]
-    types: [completed]
   workflow_dispatch:
 
 permissions:
@@ -28,7 +25,6 @@ concurrency:
 
 jobs:
   pubblica:
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     environment:
       name: github-pages

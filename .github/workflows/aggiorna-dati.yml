@@ -26,6 +26,7 @@ concurrency:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   aggiorna:
@@ -121,6 +122,16 @@ jobs:
           # se nel frattempo qualcuno ha caricato file a mano, ci si riallinea prima di spingere
           git pull --rebase --autostash || true
           git push
+
+      # Un salvataggio fatto da un workflow non fa partire la pubblicazione,
+      # e l'innesco "workflow_run" non va bene con deploy-pages (cerca i file
+      # nell'esecuzione sbagliata). Si avvia quindi la pubblicazione a mano,
+      # da qui: l'avvio manuale è permesso anche al token del workflow.
+      - name: Avvia la pubblicazione su GitHub Pages
+        if: steps.novita.outputs.novita == 'si'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pubblica-pagine.yml --repo "${{ github.repository }}" --ref "${{ github.ref_name }}"
 
       # Avviso opzionale: basta un segreto NOTIFICA_WEBHOOK con l'indirizzo
       # di un webhook (Slack, Teams, Make, Zapier o una casella email
