@@ -9,7 +9,8 @@ name: Aggiornamento dei dati
 #          sono le 06:00 UTC, in inverno le 07:00. Il primo controllo prende
 #          il caso estivo, il secondo quello invernale.
 #   07:20  vedi sopra
-#   11:20  Eurostat aggiorna Comext in mattinata
+#   11:20  Eurostat aggiorna Comext in mattinata; EUMOFA riscrive i file
+#          delle importazioni settimanali il martedì mattina
 #   15:40  la BCE pubblica i cambi verso le 16:00 CET
 on:
   schedule:
@@ -57,12 +58,13 @@ jobs:
         continue-on-error: true
         run: python ingest/eurostat_comext.py --db dati/archivio.sqlite
 
-      # Quotazioni giornaliere di Rungis: il passo è attivo solo per le
-      # serie con un indirizzo in config/rnm.json. La media settimanale
-      # la costruisce il generatore della pagina.
-      - name: Quotazioni RNM Rungis
+      # Importazioni settimanali in Italia per provenienza (dati doganali).
+      # Un file che alla fonte non è cambiato non viene riscaricato. Se la
+      # fonte non risponde, la pagina resta sull'ultima settimana valida e
+      # l'errore finisce nel resoconto.
+      - name: Importazioni settimanali EUMOFA
         continue-on-error: true
-        run: python ingest/rnm_rungis.py --db dati/archivio.sqlite
+        run: python ingest/eumofa_import.py --db dati/archivio.sqlite
 
       - name: C'è qualcosa di nuovo?
         id: novita
@@ -114,8 +116,10 @@ jobs:
         run: |
           git config user.name "Aggiornamento dati"
           git config user.email "redazione@pesceinrete.com"
-          git add dati/archivio.sqlite web/data/ web/bollettini/ web/newsletter/ web/dati-mercati.en.html
+          git add -A dati/ web/data/ web/bollettini/ web/newsletter/ web/dati-mercati.html web/dati-mercati.en.html
           git commit -m "Dati aggiornati $(date -u +%Y-%m-%d\ %H:%M) — ${{ steps.novita.outputs.riassunto }}"
+          # se nel frattempo qualcuno ha caricato file a mano, ci si riallinea prima di spingere
+          git pull --rebase --autostash || true
           git push
 
       # Avviso opzionale: basta un segreto NOTIFICA_WEBHOOK con l'indirizzo

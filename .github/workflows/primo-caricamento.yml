@@ -36,13 +36,15 @@ jobs:
             echo '```'
             python ingest/ssb_laks.py --db dati/archivio.sqlite --controllo 2>&1 || true
             python ingest/eurostat_comext.py --db dati/archivio.sqlite --controllo --prodotto salmone 2>&1 || true
-            python ingest/rnm_rungis.py --db dati/archivio.sqlite --controllo 2>&1 || true
+            python ingest/eumofa_import.py --db dati/archivio.sqlite --controllo 2>&1 || true
             echo '```'
           } >> $GITHUB_STEP_SUMMARY
 
       - name: Archivio nuovo, senza dati dimostrativi
         run: |
-          rm -f dati/archivio.sqlite dati/DIMOSTRATIVO
+          rm -f dati/archivio.sqlite dati/DIMOSTRATIVO dati/eumofa_stato.json
+          rm -f web/data/sintesi-*.html web/data/prodotti/*.json web/data/social/*.png
+          rm -f web/bollettini/* web/newsletter/*
           mkdir -p dati
 
       - name: Cambi BCE
@@ -55,9 +57,8 @@ jobs:
         continue-on-error: true
         run: python ingest/eurostat_comext.py --db dati/archivio.sqlite
 
-      - name: Quotazioni RNM Rungis
-        continue-on-error: true
-        run: python ingest/rnm_rungis.py --db dati/archivio.sqlite
+      - name: Importazioni settimanali EUMOFA, dal 2023
+        run: python ingest/eumofa_import.py --db dati/archivio.sqlite
 
       - name: Ricostruisci la pagina
         run: |
@@ -65,6 +66,8 @@ jobs:
           python strumenti/componi_pagina.py
           python strumenti/traduci_pagina.py
           python strumenti/genera_anteprime_social.py
+          python strumenti/genera_newsletter.py
+          python strumenti/valuta_avvisi.py
           python strumenti/cruscotto_redazione.py --db dati/archivio.sqlite
 
       - name: Collaudo
@@ -79,7 +82,7 @@ jobs:
         run: |
           git config user.name "Primo caricamento"
           git config user.email "redazione@pesceinrete.com"
-          git add dati/ web/data/ web/bollettini/ web/dati-mercati.en.html
+          git add -A dati/ web/data/ web/bollettini/ web/newsletter/ web/dati-mercati.html web/dati-mercati.en.html
           git commit -m "Primo caricamento dei dati veri $(date -u +%Y-%m-%d)"
           git push
 
@@ -100,4 +103,12 @@ jobs:
           print("|---|---|---|---|")
           for p in d["prodotti"]:
               print(f"| {p['nome']} | {p['ultimo_periodo']} | {p['prezzo_eur_kg']:.2f} | {p['fonte']} |")
+          print("\n### Esito delle fonti\n")
+          print("| Fonte | Esito | Nuove | Note |")
+          print("|---|---|---|---|")
+          import sqlite3
+          db = sqlite3.connect("dati/archivio.sqlite"); db.row_factory = sqlite3.Row
+          for r in db.execute("SELECT * FROM esecuzioni WHERE esito != 'completata' OR fonte LIKE 'EUMOFA%' "
+                              "OR fonte LIKE 'SSB%' OR fonte LIKE 'BCE%' ORDER BY avviata_il"):
+              print(f"| {r['fonte']} | {r['esito']} | {r['nuove']} | {(r['messaggio'] or '')[:160]} |")
           FINE

@@ -4,10 +4,14 @@ name: Pubblica i file della pagina su GitHub Pages
 # qui e nessuno deve più caricare niente via FTP. Si attiva da solo a ogni
 # aggiornamento dei dati. Prima volta: Settings → Pages → Source:
 # "GitHub Actions".
+#
+# Due inneschi, e servono entrambi: "push" per i file caricati a mano,
+# "workflow_run" per gli aggiornamenti automatici, perché un commit fatto
+# da un altro flusso di GitHub non fa partire l'innesco "push".
 on:
   push:
     branches: [main, master]
-        paths: ["web/**"]
+    paths: ["web/**"]
   workflow_run:
     workflows: ["Aggiornamento dei dati", "Primo caricamento dei dati veri"]
     types: [completed]
@@ -24,6 +28,7 @@ concurrency:
 
 jobs:
   pubblica:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
