@@ -51,16 +51,17 @@ scontato.
 |---|---|---|---|---|
 | SSB, tabella 03024 | Prezzo medio export e volumi, fresco e congelato | Settimanale, mercoledi | CC BY 4.0: riuso anche commerciale con attribuzione, link alla licenza e indicazione delle modifiche | API pubblica, già implementata |
 | BCE, cambi di riferimento | Cambio giornaliero NOK/EUR | Giornaliera | Riuso con attribuzione | API pubblica, già implementata |
-| EUMOFA | Import UE settimanali (origine DG TAXUD Surveillance), prime vendite mensili, prezzi lungo la filiera, prezzi al dettaglio | Settimanale e mensile | Da confermare per iscritto | Da file esportato, in attesa di conferma |
-| Eurostat Comext | Import ed export per Stato membro e partner | Mensile | Riuso consentito con attribuzione | API disponibile, non ancora implementata |
-| FranceAgriMer RNM | Quotazioni per prodotto e piazza, Rungis compreso | Settimanale | "Licence Ouverte" solo sui contenuti che la riportano: verificare serie per serie | Da valutare |
+| EUMOFA (Commissione europea) | Importazioni settimanali per codice doganale, Stato importatore e provenienza, da dati doganali DG TAXUD | Settimanale, con circa due settimane di ritardo | Riuso dei contenuti della Commissione, CC BY 4.0 | File pubblici a indirizzo fisso, implementata |
+| Eurostat Comext | Import ed export per Stato membro e partner, anche intra-UE | Mensile, due o tre mesi di ritardo | Riuso consentito con attribuzione | API pubblica, implementata |
+| FranceAgriMer RNM | Quotazioni per prodotto e piazza, Rungis compreso | Settimanale | Non rilevante | **Esclusa**: il sito blocca lo scaricamento automatico |
+| BMTI | Prezzi all'ingrosso dei mercati ittici italiani | Settimanale | Autorizzazione scritta | **Esclusa**: nessun collegamento automatico |
 | Mercabarna | Quantità e prezzi medi del mercato ittico di Barcellona | Anche settimanale | Da verificare | Da valutare |
 | FAO GLOBEFISH | Prezzi di oltre 350 prodotti sui mercati europei | Settimanale | Condizioni miste, eccezioni per dati di terzi: non estendere il permesso a tutto il portale | Da valutare |
 
-Regola pratica: si parte dalle fonti con licenza esplicitamente compatibile
-e si chiede conferma scritta solo per i casi dubbi, descrivendo con
-precisione che cosa vogliamo fare, cioè aggiornamento settimanale,
-conservazione dello storico, grafici nostri e uso editoriale commerciale.
+Regola pratica, dal 21 novembre 2026: in pagina entrano solo fonti
+pubbliche che dichiarano il riuso libero e si scaricano da un indirizzo
+pubblico. Non si chiedono autorizzazioni e non si aggirano blocchi: una
+fonte che non rispetta le due condizioni resta fuori.
 
 ## Il diritto sulla banca dati
 
@@ -91,10 +92,15 @@ primo prezzo a chiunque.
 
 ## Attribuzione da esporre in pagina
 
-> Dati: Statistics Norway (SSB), tabella 03024, CC BY 4.0, con elaborazioni
-> di Pesceinrete (conversione in euro ai cambi di riferimento BCE della
-> stessa settimana). Cambi: Banca centrale europea, valori di riferimento
-> a scopo informativo.
+> Salmone — Dati: Statistics Norway (SSB), tabella 03024, CC BY 4.0, con
+> elaborazioni di Pesceinrete (conversione in euro ai cambi di riferimento
+> BCE della stessa settimana).
+>
+> Altre specie — Dati: EUMOFA (Commissione europea), importazioni UE
+> settimanali da dati doganali, CC BY 4.0, con elaborazioni di Pesceinrete
+> (valore unitario per provenienza, sole settimane complete).
+>
+> Arrivi mensili — Dati: Eurostat, Comext DS-045409.
 
 La formula compare già nel piede della pagina e nell'intestazione di ogni
 file CSV esportato.
@@ -128,15 +134,14 @@ Quando esce un mese nuovo, Eurostat rivede anche i precedenti. Le revisioni
 su questa fonte sono normali e l'archivio le conserva: non sono un errore
 da inseguire.
 
-## Perché EUMOFA resta in attesa
+## EUMOFA: come la leggiamo
 
-EUMOFA pubblica le importazioni UE **settimanali**, che arrivano molto
-prima dei mensili Comext e sarebbero il complemento naturale del prezzo
-norvegese. Il portale è consultabile ed esportabile, ma non espone una API
-pubblica documentata e stabile, e le condizioni di riuso per una
-ripubblicazione commerciale con archivio storico vanno confermate per
-iscritto.
+EUMOFA pubblica le importazioni UE **settimanali** da dati doganali. Il
+suo "Bulk Download" espone un file per anno a un indirizzo pubblico e
+fisso; il modulo `ingest/eumofa_import.py` lo scarica, tiene le righe con
+l'Italia come Stato importatore e calcola il valore unitario per
+provenienza. Le regole (settimane complete, buchi, revisioni) sono
+descritte in testa al modulo e in [fonti-per-specie.md](fonti-per-specie.md).
 
-Finché quella conferma non c'è, il caricamento avviene da file esportato
-a mano: cinque minuti a settimana, tracciati come tutto il resto. È una
-scelta di prudenza, non un limite tecnico.
+Se l'indirizzo cambia, il rimedio a mano è in
+[SENZA-TERMINALE.md](SENZA-TERMINALE.md).

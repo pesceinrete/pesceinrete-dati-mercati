@@ -33,7 +33,7 @@ vostro.
 ```
 config/      registro dei prodotti: aggiungerne uno è configurazione
 core/        archivio, settimane e mesi, calcoli, bollettino
-ingest/      una fonte per file: SSB, BCE, Eurostat Comext, RNM, EUMOFA
+ingest/      una fonte per file: SSB, BCE, Eurostat Comext, EUMOFA
 strumenti/   dati di prova, anteprima, cruscotto, rilevatore di novità
 tests/       76 controlli su calcoli, parser (anche su risposte reali), registro, lingue e sorveglianza; 145 sulla pagina
 web/         la pagina e i file che la alimentano
@@ -186,11 +186,15 @@ Le motivazioni sono in [docs/scelte-di-design.md](docs/scelte-di-design.md).
 
 ## Le specie
 
-Dieci: salmone, orata, spigola, polpo, gambero, merluzzo, tonno pinna
-gialla, pesce spada, cozze, vongole. Per ciascuna un prezzo settimanale di
-riferimento e le importazioni italiane mensili per provenienza, 39 serie
-Comext in tutto. Le fonti, scelte per autorevolezza e automatizzabilità, e
-le motivazioni sono in [docs/fonti-per-specie.md](docs/fonti-per-specie.md).
+Nove: salmone, orata, spigola, gambero, polpo, calamaro, seppia, astice,
+pesce spada. Per il salmone il prezzo all'esportazione norvegese; per le
+altre il valore medio settimanale delle importazioni in Italia per
+provenienza, dai dati doganali pubblicati da EUMOFA. Per tutte, le
+importazioni italiane mensili da Eurostat, comprese le provenienze UE.
+Tutte le fonti sono pubbliche e a riuso libero: nessuna autorizzazione da
+chiedere. Una specie entra in elenco solo dopo che il suo prezzo
+settimanale è stato misurato sui dati veri: le ragioni, specie per
+specie, sono in [docs/fonti-per-specie.md](docs/fonti-per-specie.md).
 
 ## Stato
 
@@ -201,9 +205,10 @@ dati veri", un pulsante nella scheda Actions del repository.
 I parser di SSB e di Eurostat Comext sono stati verificati sulle risposte
 reali dei due servizi (ottobre 2026): formato CSV della PxWebApi v2 di SSB,
 struttura JSON di DS-045409 con quantità in quintali. L'API con i dataset
-pronti di SSB, dismessa a fine 2025, non viene più usata. RNM Rungis: le
-pagine prodotto e le diciture delle mercuriali sono quelle reali, la prima
-esecuzione le conferma. BMTI resta da file esportato.
+pronti di SSB, dismessa a fine 2025, non viene più usata. Il lettore dei
+file EUMOFA è stato verificato sul file reale del 2026 (novembre 2026).
+Rungis (RNM) e BMTI sono usciti dal progetto: il primo blocca lo
+scaricamento automatico, il secondo richiede un'autorizzazione scritta.
 
 Due modi di installare: un plugin WordPress che si carica dal pannello e
 crea le pagine da solo, oppure i file nel tema figlio.

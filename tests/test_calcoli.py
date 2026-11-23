@@ -278,22 +278,41 @@ def test_serie_non_registrata_rifiutata(archivio):
 
 
 # --------------------------------------------------------------------------
-# Quotazioni giornaliere
+# Media mobile ponderata (serie doganali)
 # --------------------------------------------------------------------------
 
 
-def test_giornaliero_diventa_media_settimanale():
-    giorni = [
-        osservazione("2026-09-07", 7.0),   # lunedi W37
-        osservazione("2026-09-09", 8.0),
-        osservazione("2026-09-11", 9.0),
-        osservazione("2026-09-14", 5.0),   # lunedi W38, giorno solo
+def test_media_mobile_pesa_sui_volumi_e_non_inventa_settimane():
+    serie = [
+        osservazione("2026-W10", 10.0, 100.0),
+        osservazione("2026-W11", 20.0, 300.0),
+        # W12 manca: resta fuori dalla somma, non viene interpolata
+        osservazione("2026-W13", 10.0, 100.0),
+        osservazione("2026-W20", 8.0, 50.0),    # isolata: una settimana sola nella finestra
     ]
-    settimane = metrics.da_giornaliero_a_settimanale(giorni)
-    assert [s["periodo"] for s in settimane] == ["2026-W37"]  # W38 scartata: un giorno solo
-    assert settimane[0]["valore"] == pytest.approx(8.0)
-    assert settimane[0]["quantita"] == 3
+    media = {o["periodo"]: o for o in metrics.media_ponderata_mobile(serie, settimane=4)}
+    assert media["2026-W10"]["valore"] is None                    # una settimana sola: non basta
+    assert media["2026-W11"]["valore"] == pytest.approx(17.5)     # (10*100 + 20*300) / 400
+    assert media["2026-W13"]["valore"] == pytest.approx(16.0)     # W10, W11, W13 su 500 t
+    assert "2026-W12" not in media
+    assert media["2026-W20"]["valore"] is None
+    assert media["2026-W13"]["quantita"] == 100.0                 # il volume resta quello della settimana
 
+
+def test_finestra_ponderata_delle_ultime_quattro_settimane():
+    serie = [osservazione(f"2026-W{s}", 5.0 + s / 10, 100.0) for s in range(10, 21)]
+    serie.append(osservazione("2026-W21", 9.0, 300.0))
+    f = metrics.finestra_ponderata(serie, "2026-W21", 4)
+    assert f["tonnellate"] == 600.0 and f["settimane_con_dati"] == 4
+    assert f["prezzo"] == pytest.approx((6.8 * 100 + 6.9 * 100 + 7.0 * 100 + 9.0 * 300) / 600)
+    vuota = metrics.finestra_ponderata(serie, "2026-W40", 4)
+    assert vuota["tonnellate"] is None and vuota["prezzo"] is None
+
+
+def test_dello_davanti_a_zero_virgola():
+    from core.redazione import _del
+    assert _del(0.6) == "dello " and _del(-0.4) == "dello "
+    assert _del(8.2) == "dell'" and _del(3.4) == "del "
 
 
 def test_lettura_al_netto_del_livello_toglie_l_inflazione():

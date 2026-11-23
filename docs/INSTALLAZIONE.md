@@ -37,11 +37,8 @@ Sul proprio computer, dentro la cartella del progetto:
 ./gestisci controlla     # interroga le fonti e mostra cosa trova
 ```
 
-Questo passo non scrive niente. Interroga SSB, le 39 serie Comext e, per
-le serie RNM che hanno un indirizzo in `config/rnm.json`, le mercuriali di
-Rungis. Per RNM la prima esecuzione serve proprio a compilare quel file:
-lo script stampa le tabelle che trova, si individua la riga giusta, si
-scrive l'indirizzo e il numero della colonna del prezzo. Serve a verificare che le fonti
+Questo passo non scrive niente. Interroga SSB, le serie Comext e i file
+settimanali EUMOFA. Serve a verificare che le fonti
 rispondano e che le etichette delle categorie siano riconosciute. Se SSB
 ha cambiato le diciture, lo script si ferma con un errore esplicito
 invece di caricare la serie sbagliata: in quel caso si aggiorna la mappa
@@ -99,8 +96,7 @@ pagina generica. Per farlo:
 
 1. creare una pagina figlia di "Dati e mercati" per ogni specie, con slug
    uguale all'identificativo del registro (`salmone`, `orata`, `spigola`,
-   `polpo`, `gambero`, `merluzzo`, `tonno`, `pesce_spada`, `cozze`,
-   `vongole`) e dentro lo shortcode `[dati_mercati prodotto="orata"]`;
+   `gambero`, `polpo`, `calamaro`, `seppia`, `astice`, `pesce_spada`) e dentro lo shortcode `[dati_mercati prodotto="orata"]`;
 2. nel `functions.php` aggiungere:
 
 ```php

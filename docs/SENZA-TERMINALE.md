@@ -70,13 +70,11 @@ giorno e ripubblica i file ogni volta che c'è un dato nuovo.
    dimostrativi", il passo 2 non è completato o l'indirizzo del passo 3.3
    non è corretto: controlla che finisca con una barra.
 
-## 4. Le tre email (10 minuti)
+## 4. Autorizzazioni: nessuna
 
-Invia le richieste a FranceAgriMer, BMTI ed EUMOFA con i testi già pronti
-(sono nella risposta precedente e in `docs/fonti-e-licenze.md`). Le
-risposte vanno conservate.
-
----
+Tutte le fonti in uso (Statistics Norway, EUMOFA, Eurostat, BCE) sono
+pubbliche e dichiarano il riuso libero con citazione della fonte. Non c'è
+nessuna richiesta da inviare. La citazione la mette la pagina da sola.
 
 ## Cosa succede dopo
 
@@ -127,13 +125,18 @@ aggiungere una voce come questa dentro l'elenco:
 marcatore azzurro sui grafici dell'orata, con il testo sotto. `"specie":
 "tutte"` la mette su tutte le schede.
 
-## Se le quotazioni di Rungis non arrivano
+## Se i dati EUMOFA non arrivano
 
-Il primo caricamento interroga le pagine RNM con le etichette scritte nel
-file `config/rnm.json`. Se per una specie il riepilogo dice "riga non
-trovata", il nome del prodotto sulla mercuriale è leggermente diverso da
-quello previsto. Nel riepilogo dell'esecuzione ci sono le prime righe
-della tabella trovata: basta copiare da lì le parole giuste nel campo
-`etichetta` del file (si modifica direttamente su GitHub: apri il file,
-icona della matita, correggi, **Commit changes**) e rilanciare il primo
-caricamento.
+I prezzi settimanali di tutte le specie tranne il salmone vengono da un
+file che EUMOFA pubblica a un indirizzo fisso. Se quell'indirizzo cambia,
+nel riepilogo dell'esecuzione compare "EUMOFA: scaricamento fallito" e la
+pagina resta sull'ultima settimana valida: non si rompe niente.
+
+Rimedio a mano, due minuti:
+
+1. apri il Bulk Download di EUMOFA (dal sito eumofa.eu), scegli
+   **Weekly-Import** e scarica il file dell'anno in corso;
+2. caricalo nel repository, nella cartella `dati/manuale/` (**Add file →
+   Upload files**), senza cambiargli nome;
+3. avvisa chi mantiene il codice: l'indirizzo nuovo va scritto in
+   `ingest/eumofa_import.py`, alla riga `BASE`.

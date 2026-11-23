@@ -26,6 +26,8 @@ case "${1:-aiuto}" in
 
   prova)
     titolo "Dati dimostrativi"
+    rm -f "$DB" dati/eumofa_stato.json
+    rm -f "$USCITA"/sintesi-*.html "$USCITA"/prodotti/*.json "$USCITA"/social/*.png
     $PY strumenti/genera_dati_dimostrativi.py --db "$DB"
     $PY costruisci_dati_sito.py --db "$DB" --uscita "$USCITA"
     $PY strumenti/cruscotto_redazione.py --db "$DB"
@@ -45,22 +47,22 @@ case "${1:-aiuto}" in
     titolo "Interrogazione delle fonti, senza scrivere"
     $PY ingest/ssb_laks.py --db "$DB" --controllo
     $PY ingest/eurostat_comext.py --db "$DB" --controllo
-    $PY ingest/rnm_rungis.py --db "$DB" --controllo || true
+    $PY ingest/eumofa_import.py --db "$DB" --controllo || true
     echo
-    echo "Se le etichette non vengono riconosciute, la fonte ha cambiato struttura:"
+    echo "Se le etichette SSB non vengono riconosciute, la fonte ha cambiato struttura:"
     echo "aggiornare RICONOSCIMENTO in ingest/ssb_laks.py prima di caricare."
     ;;
 
   reale)
     titolo "Primo caricamento dei dati veri"
-    rm -f dati/DIMOSTRATIVO
+    rm -f dati/DIMOSTRATIVO dati/eumofa_stato.json
     if [ -f "$DB" ]; then
       echo "Archivio esistente trovato: verrà aggiornato, non sovrascritto."
     fi
     $PY ingest/bce_cambi.py --db "$DB" --valuta NOK
     $PY ingest/ssb_laks.py --db "$DB"
     $PY ingest/eurostat_comext.py --db "$DB" || echo "Comext non disponibile: si prosegue."
-    $PY ingest/rnm_rungis.py --db "$DB" || echo "RNM: indirizzi da compilare in config/rnm.json."
+    $PY ingest/eumofa_import.py --db "$DB" || echo "EUMOFA non disponibile: si prosegue."
     $PY costruisci_dati_sito.py --db "$DB" --uscita "$USCITA"
     $PY strumenti/cruscotto_redazione.py --db "$DB"
     echo
@@ -74,7 +76,7 @@ case "${1:-aiuto}" in
     $PY ingest/bce_cambi.py --db "$DB" --valuta NOK || true
     $PY ingest/ssb_laks.py --db "$DB" || true
     $PY ingest/eurostat_comext.py --db "$DB" || true
-    $PY ingest/rnm_rungis.py --db "$DB" || true
+    $PY ingest/eumofa_import.py --db "$DB" || true
     if $PY strumenti/novita.py --db "$DB" --dal "$INIZIO" | grep -q "novita=si"; then
       $PY costruisci_dati_sito.py --db "$DB" --uscita "$USCITA"
       $PY strumenti/componi_pagina.py

@@ -185,6 +185,8 @@
 .pir-tabella tbody tr:hover td{background:var(--g050)}
 .pir-tabella tbody tr:last-child td{border-bottom:0}
 .pir-tabella .pir-forte{font-weight:800}
+.pir-provenienze{margin-top:28px}
+.pir-provenienze tr.pir-totale td{font-weight:800;border-top:2px solid var(--g200);border-bottom:0}
 .pir-nota{margin:12px 0 0;padding:10px 12px;background:var(--avviso-velo);color:var(--avviso);font-size:13px;border-radius:8px}
 
 /* calcolatore */

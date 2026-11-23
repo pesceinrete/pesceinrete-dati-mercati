@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: Pesceinrete — Dati e mercati
- * Description: Sezione di dati di mercato ittici: prezzi settimanali, posizione stagionale, importazioni italiane. Crea da sola le pagine e legge i dati dal repository.
- * Version: 1.0.0
+ * Description: Sezione di dati di mercato ittici: prezzi settimanali all'importazione, posizione stagionale, importazioni italiane. Crea da sola le pagine e legge i dati dal repository.
+ * Version: 1.1.0
  * Author: Pesceinrete
  * Text Domain: pesceinrete-dati-mercati
  *
@@ -19,7 +19,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'PIR_DM_VERSIONE', '1.0.0' );
+define( 'PIR_DM_VERSIONE', '1.1.0' );
 define( 'PIR_DM_CARTELLA', plugin_dir_path( __FILE__ ) . 'assets/' );
 define( 'PIR_DM_INDIRIZZO', plugin_dir_url( __FILE__ ) . 'assets/' );
 define( 'PIR_DM_OPZIONE', 'pir_dm_url_base' );
@@ -29,13 +29,12 @@ const PIR_DM_SPECIE = array(
 	'salmone'     => array( 'Salmone', 'Salmon' ),
 	'orata'       => array( 'Orata', 'Sea bream' ),
 	'spigola'     => array( 'Spigola', 'Sea bass' ),
-	'polpo'       => array( 'Polpo', 'Octopus' ),
 	'gambero'     => array( 'Gambero', 'Shrimp' ),
-	'merluzzo'    => array( 'Merluzzo', 'Cod' ),
-	'tonno'       => array( 'Tonno', 'Tuna' ),
+	'polpo'       => array( 'Polpo', 'Octopus' ),
+	'calamaro'    => array( 'Calamaro', 'Squid' ),
+	'seppia'      => array( 'Seppia', 'Cuttlefish' ),
+	'astice'      => array( 'Astice', 'Lobster' ),
 	'pesce_spada' => array( 'Pesce spada', 'Swordfish' ),
-	'cozze'       => array( 'Cozze', 'Mussels' ),
-	'vongole'     => array( 'Vongole', 'Clams' ),
 );
 
 /* --------------------------------------------------------------------------
@@ -128,7 +127,16 @@ function pir_dm_shortcode( $attributi = array() ) {
 	}
 	// La testata (briciole, titolo, occhiello) serve solo all'anteprima:
 	// dentro il sito titolo e menu li mette il tema.
-	$html = preg_replace( '#<header class="pir-testata"[^>]*>.*?</header>#si', '', $html );
+	// Al posto della testata dell'anteprima va il titolo della pagina WordPress,
+	// come unico h1, dentro lo sfondo della sezione. post_title evita il
+	// prefisso "Privato:" che WordPress aggiunge alle pagine private.
+	$titolo_h1 = esc_html( get_post_field( 'post_title', get_the_ID() ) );
+	$html      = preg_replace(
+		'#<header class="pir-testata"[^>]*>.*?</header>#si',
+		'<h1 class="pir-titolo-sezione pir-titolo-pagina">' . $titolo_h1 . '</h1>',
+		$html,
+		1
+	);
 	// Il logo nella testatina della sezione serve fuori dal sito: dentro, il
 	// logo lo mostra già l'intestazione del tema e ripeterlo sarebbe di troppo.
 	$html = preg_replace( '#<a [^>]*data-solo-anteprima[^>]*>.*?</a>#si', '', $html );
@@ -154,6 +162,11 @@ function pir_dm_shortcode( $attributi = array() ) {
 	}
 	$avvio .= 'window.PESCEINRETE_PRODOTTO=' . wp_json_encode( $prodotto ) . ';';
 	$avvio .= 'window.PESCEINRETE_URL_PRODOTTO=' . wp_json_encode( home_url( '/' . $radice . '/{id}/' ) ) . ';';
+	// Gli indirizzi veri delle pagine delle specie: la pagina usa questi.
+	$mappa   = pir_dm_mappa_pagine();
+	$pagine  = isset( $mappa[ $lingua ] ) ? $mappa[ $lingua ] : array();
+	unset( $pagine[''] );
+	$avvio .= 'window.PESCEINRETE_URL_PRODOTTI=' . wp_json_encode( (object) $pagine ) . ';';
 	return '<script>' . $avvio . '</script>' . $html;
 }
 add_shortcode( 'dati_mercati', 'pir_dm_shortcode' );
@@ -163,10 +176,33 @@ add_shortcode( 'dati_mercati', 'pir_dm_shortcode' );
  * -------------------------------------------------------------------------- */
 
 function pir_dm_crea_pagine() {
+	// Le pagine che esistono già, ovunque siano e in qualunque stato: una
+	// specie che ha già la sua pagina non ne riceve una seconda.
+	global $wpdb;
+	$presenti = array();
+	$pagine   = $wpdb->get_results(
+		"SELECT post_content FROM {$wpdb->posts}
+		 WHERE post_type = 'page' AND post_status IN ('publish','private','draft','pending','future')
+		 AND post_content LIKE '%[dati_mercati%'"
+	);
+	foreach ( (array) $pagine as $pagina ) {
+		if ( preg_match( '/\[dati_mercati\b([^\]]*)\]/', $pagina->post_content, $trovato ) ) {
+			$attributi = shortcode_parse_atts( $trovato[1] );
+			$attributi = is_array( $attributi ) ? $attributi : array();
+			$lingua_p  = ( isset( $attributi['lingua'] ) && 'en' === $attributi['lingua'] ) ? 'en' : 'it';
+			$presenti[ $lingua_p . '|' . ( isset( $attributi['prodotto'] ) ? sanitize_key( $attributi['prodotto'] ) : '' ) ] = true;
+		}
+	}
 	foreach ( array( 'it' => 'dati-mercati', 'en' => 'market-data' ) as $lingua => $slug ) {
 		$titolo = ( 'en' === $lingua ) ? 'Market data' : 'Dati e mercati';
 		$padre  = pir_dm_assicura_pagina( $slug, $titolo, '[dati_mercati lingua="' . $lingua . '"]', 0 );
+		if ( ! $padre || is_wp_error( $padre ) ) {
+			continue;   // senza pagina d'ingresso non si creano pagine orfane
+		}
 		foreach ( PIR_DM_SPECIE as $id => $nomi ) {
+			if ( isset( $presenti[ $lingua . '|' . $id ] ) ) {
+				continue;
+			}
 			$nome = ( 'en' === $lingua ) ? $nomi[1] : $nomi[0];
 			pir_dm_assicura_pagina(
 				$id,
@@ -176,9 +212,23 @@ function pir_dm_crea_pagine() {
 			);
 		}
 	}
+	delete_transient( 'pir_dm_pagine' );
 	flush_rewrite_rules();
 }
 register_activation_hook( __FILE__, 'pir_dm_crea_pagine' );
+
+/**
+ * Aggiornamento del plugin: se l'elenco delle specie è cambiato, crea le
+ * pagine che mancano senza bisogno di disattivare e riattivare. Le pagine
+ * delle specie non più pubblicate non vengono toccate: si cestinano a mano.
+ */
+function pir_dm_aggiorna_pagine() {
+	if ( get_option( 'pir_dm_versione' ) !== PIR_DM_VERSIONE ) {
+		pir_dm_crea_pagine();
+		update_option( 'pir_dm_versione', PIR_DM_VERSIONE );
+	}
+}
+add_action( 'admin_init', 'pir_dm_aggiorna_pagine' );
 
 function pir_dm_assicura_pagina( $slug, $titolo, $contenuto, $padre ) {
 	$esistente = get_posts(
@@ -210,10 +260,30 @@ function pir_dm_assicura_pagina( $slug, $titolo, $contenuto, $padre ) {
  * Titolo, descrizione, hreflang e data di modifica
  * -------------------------------------------------------------------------- */
 
+/**
+ * Attributi dello shortcode [dati_mercati ...] nel contenuto della pagina
+ * corrente, oppure null. Permette di riconoscere una pagina della sezione
+ * anche se è stata creata o spostata a mano, fuori da /dati-mercati/.
+ */
+function pir_dm_attributi_pagina() {
+	$post = get_queried_object();
+	if ( ! $post || empty( $post->post_content ) || ! is_singular() ) {
+		return null;
+	}
+	if ( ! preg_match( '/\[dati_mercati\b([^\]]*)\]/', $post->post_content, $trovato ) ) {
+		return null;
+	}
+	$attributi = shortcode_parse_atts( $trovato[1] );
+	return is_array( $attributi ) ? $attributi : array();
+}
+
 function pir_dm_e_pagina_sezione() {
 	$post = get_queried_object();
 	if ( ! $post || ! isset( $post->post_name ) ) {
 		return false;
+	}
+	if ( null !== pir_dm_attributi_pagina() ) {
+		return true;
 	}
 	if ( in_array( $post->post_name, array( 'dati-mercati', 'market-data' ), true ) ) {
 		return true;
@@ -228,6 +298,10 @@ function pir_dm_lingua_pagina() {
 	$post = get_queried_object();
 	if ( ! $post ) {
 		return 'it';
+	}
+	$attributi = pir_dm_attributi_pagina();
+	if ( $attributi && ! empty( $attributi['lingua'] ) ) {
+		return ( 'en' === $attributi['lingua'] ) ? 'en' : 'it';
 	}
 	$slug  = $post->post_name;
 	$padre = ! empty( $post->post_parent ) ? get_post_field( 'post_name', $post->post_parent ) : '';
@@ -248,14 +322,85 @@ function pir_dm_voce_pagina() {
 	if ( ! $dati || empty( $dati['prodotti'] ) ) {
 		return null;
 	}
-	$slug = get_post_field( 'post_name', get_queried_object_id() );
+	$slug      = get_post_field( 'post_name', get_queried_object_id() );
+	$attributi = pir_dm_attributi_pagina();
+	if ( $attributi && ! empty( $attributi['prodotto'] ) ) {
+		$slug = sanitize_key( $attributi['prodotto'] );
+	}
 	foreach ( $dati['prodotti'] as $voce ) {
 		if ( $voce['id'] === $slug ) {
 			return $voce;
 		}
 	}
-	return $dati['prodotti'][0];
+	// Pagina d'ingresso della sezione: titolo e descrizione sono della
+	// sezione, non della prima specie. L'immagine resta quella della prima.
+	$inglese = ( 'en' === pir_dm_lingua_pagina() );
+	return array(
+		'id'                 => $dati['prodotti'][0]['id'],
+		'titolo_pagina'      => $inglese
+			? 'Seafood market data: weekly import prices and volumes in Italy'
+			: 'Dati e mercati ittici: prezzi settimanali all\'importazione e arrivi in Italia',
+		'descrizione_pagina' => $inglese
+			? 'Weekly prices for salmon, sea bream, sea bass, shrimp, octopus, squid, cuttlefish, lobster and swordfish, with volumes, origins and Italian imports. Official sources, updated every week.'
+			: 'Prezzi settimanali di salmone, orata, spigola, gambero, polpo, calamaro, seppia, astice e pesce spada, con volumi, provenienze e importazioni italiane. Fonti ufficiali, aggiornamento ogni settimana.',
+	);
 }
+
+/**
+ * Dove stanno davvero le pagine della sezione: lingua => specie => indirizzo.
+ * La specie '' è la pagina d'ingresso. Si leggono le pagine che contengono
+ * lo shortcode, ovunque siano: sotto /dati-mercati/ oppure alla radice del
+ * sito. I collegamenti fra le specie usano questi indirizzi, non uno schema
+ * fisso. Le pagine private compaiono solo a chi può vederle.
+ */
+function pir_dm_mappa_pagine( $solo_pubbliche = false ) {
+	global $wpdb;
+	static $righe = null;
+	if ( null === $righe ) {
+		$righe = get_transient( 'pir_dm_pagine' );
+		if ( ! is_array( $righe ) ) {
+			$righe  = array();
+			$pagine = $wpdb->get_results(
+				"SELECT ID, post_status, post_content FROM {$wpdb->posts}
+				 WHERE post_type = 'page' AND post_status IN ('publish','private')
+				 AND post_content LIKE '%[dati_mercati%' ORDER BY ID"
+			);
+			foreach ( (array) $pagine as $pagina ) {
+				if ( ! preg_match( '/\[dati_mercati\b([^\]]*)\]/', $pagina->post_content, $trovato ) ) {
+					continue;
+				}
+				$attributi = shortcode_parse_atts( $trovato[1] );
+				$attributi = is_array( $attributi ) ? $attributi : array();
+				$righe[]   = array(
+					'lingua'   => ( isset( $attributi['lingua'] ) && 'en' === $attributi['lingua'] ) ? 'en' : 'it',
+					'prodotto' => isset( $attributi['prodotto'] ) ? sanitize_key( $attributi['prodotto'] ) : '',
+					'pubblica' => ( 'publish' === $pagina->post_status ),
+					'url'      => get_permalink( $pagina->ID ),
+				);
+			}
+			set_transient( 'pir_dm_pagine', $righe, 10 * MINUTE_IN_SECONDS );
+		}
+	}
+	$vede_private = ! $solo_pubbliche && current_user_can( 'read_private_pages' );
+	$mappa        = array( 'it' => array(), 'en' => array() );
+	foreach ( $righe as $riga ) {
+		if ( ! $riga['pubblica'] && ! $vede_private ) {
+			continue;
+		}
+		// a parità di specie vince la pagina pubblicata
+		if ( ! isset( $mappa[ $riga['lingua'] ][ $riga['prodotto'] ] ) || $riga['pubblica'] ) {
+			$mappa[ $riga['lingua'] ][ $riga['prodotto'] ] = $riga['url'];
+		}
+	}
+	return $mappa;
+}
+
+function pir_dm_svuota_mappa_pagine() {
+	delete_transient( 'pir_dm_pagine' );
+}
+add_action( 'save_post_page', 'pir_dm_svuota_mappa_pagine' );
+add_action( 'deleted_post', 'pir_dm_svuota_mappa_pagine' );
+add_action( 'trashed_post', 'pir_dm_svuota_mappa_pagine' );
 
 function pir_dm_titolo( $titolo ) {
 	if ( ! pir_dm_e_pagina_sezione() ) {
@@ -290,11 +435,75 @@ function pir_dm_testa() {
 	printf( '<meta property="og:image" content="%s?v=%s">' . "\n", esc_url( $img ), esc_attr( gmdate( 'YmdH' ) ) );
 	printf( '<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">' . "\n" );
 	printf( '<meta name="twitter:card" content="summary_large_image">' . "\n" );
-	printf( '<link rel="alternate" hreflang="it" href="%s">' . "\n", esc_url( home_url( '/dati-mercati/' . $figlia ) ) );
-	printf( '<link rel="alternate" hreflang="en" href="%s">' . "\n", esc_url( home_url( '/market-data/' . $figlia ) ) );
-	printf( '<link rel="alternate" hreflang="x-default" href="%s">' . "\n", esc_url( home_url( '/dati-mercati/' . $figlia ) ) );
+	// hreflang: solo verso pagine che esistono e sono pubblicate.
+	$attributi = pir_dm_attributi_pagina();
+	$chiave    = ( $attributi && ! empty( $attributi['prodotto'] ) ) ? sanitize_key( $attributi['prodotto'] ) : '';
+	$pubbliche = pir_dm_mappa_pagine( true );
+	if ( isset( $pubbliche['it'][ $chiave ], $pubbliche['en'][ $chiave ] ) ) {
+		printf( '<link rel="alternate" hreflang="it" href="%s">' . "\n", esc_url( $pubbliche['it'][ $chiave ] ) );
+		printf( '<link rel="alternate" hreflang="en" href="%s">' . "\n", esc_url( $pubbliche['en'][ $chiave ] ) );
+		printf( '<link rel="alternate" hreflang="x-default" href="%s">' . "\n", esc_url( $pubbliche['it'][ $chiave ] ) );
+	}
 }
 add_action( 'wp_head', 'pir_dm_testa', 1 );
+
+/* --------------------------------------------------------------------------
+ * Convivenza con i plugin SEO
+ *
+ * Un plugin SEO scrive i propri titolo, descrizione e anteprima social e
+ * copre quelli della sezione. Qui si passano i valori giusti ai plugin
+ * più diffusi (Yoast, Rank Math, SEOPress, All in One SEO) attraverso i
+ * loro filtri. Sulle pagine fuori dalla sezione non cambia niente.
+ * -------------------------------------------------------------------------- */
+
+function pir_dm_seo_titolo( $valore ) {
+	if ( ! pir_dm_e_pagina_sezione() ) {
+		return $valore;
+	}
+	$voce = pir_dm_voce_pagina();
+	return ( $voce && ! empty( $voce['titolo_pagina'] ) ) ? $voce['titolo_pagina'] . ' — Pesceinrete' : $valore;
+}
+
+function pir_dm_seo_titolo_social( $valore ) {
+	if ( ! pir_dm_e_pagina_sezione() ) {
+		return $valore;
+	}
+	$voce = pir_dm_voce_pagina();
+	return ( $voce && ! empty( $voce['titolo_pagina'] ) ) ? $voce['titolo_pagina'] : $valore;
+}
+
+function pir_dm_seo_descrizione( $valore ) {
+	if ( ! pir_dm_e_pagina_sezione() ) {
+		return $valore;
+	}
+	$voce = pir_dm_voce_pagina();
+	return ( $voce && ! empty( $voce['descrizione_pagina'] ) ) ? $voce['descrizione_pagina'] : $valore;
+}
+
+function pir_dm_seo_immagine( $valore ) {
+	if ( ! pir_dm_e_pagina_sezione() ) {
+		return $valore;
+	}
+	$voce   = pir_dm_voce_pagina();
+	$specie = ( $voce && ! empty( $voce['id'] ) ) ? $voce['id'] : 'salmone';
+	$suffix = ( 'en' === pir_dm_lingua_pagina() ) ? '.en' : '';
+	$base   = pir_dm_url_base() ? pir_dm_url_base() : PIR_DM_INDIRIZZO;
+	return $base . 'data/social/' . $specie . $suffix . '.png';
+}
+
+foreach ( array( 'wpseo_title', 'rank_math/frontend/title', 'seopress_titles_title', 'aioseo_title' ) as $pir_dm_filtro ) {
+	add_filter( $pir_dm_filtro, 'pir_dm_seo_titolo', 99 );
+}
+foreach ( array( 'wpseo_opengraph_title', 'wpseo_twitter_title', 'rank_math/opengraph/facebook/og_title', 'rank_math/opengraph/twitter/title', 'seopress_social_og_title', 'aioseo_facebook_tags_title' ) as $pir_dm_filtro ) {
+	add_filter( $pir_dm_filtro, 'pir_dm_seo_titolo_social', 99 );
+}
+foreach ( array( 'wpseo_metadesc', 'wpseo_opengraph_desc', 'wpseo_twitter_description', 'rank_math/frontend/description', 'rank_math/opengraph/facebook/og_description', 'rank_math/opengraph/twitter/description', 'seopress_titles_desc', 'seopress_social_og_desc', 'aioseo_description' ) as $pir_dm_filtro ) {
+	add_filter( $pir_dm_filtro, 'pir_dm_seo_descrizione', 99 );
+}
+foreach ( array( 'wpseo_opengraph_image', 'wpseo_twitter_image', 'rank_math/opengraph/facebook/image', 'rank_math/opengraph/twitter/image', 'seopress_social_og_thumb' ) as $pir_dm_filtro ) {
+	add_filter( $pir_dm_filtro, 'pir_dm_seo_immagine', 99 );
+}
+unset( $pir_dm_filtro );
 
 function pir_dm_data_modifica( $data, $formato, $post ) {
 	if ( ! $post || ! pir_dm_e_pagina_sezione() ) {

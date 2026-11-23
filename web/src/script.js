@@ -483,17 +483,30 @@ function scriviBollettino(){
   }).join("");
 }
 
+/* Indirizzo della pagina di una specie quando la sezione vive dentro il sito.
+   Il sito passa l'elenco vero delle pagine (PESCEINRETE_URL_PRODOTTI); se non
+   c'è, vale lo schema fisso. Restituisce null se la pagina non esiste: in quel
+   caso la specie si mostra senza collegamento, invece di portare a un errore. */
+function conPagine(){ return !!(window.PESCEINRETE_URL_PRODOTTI||window.PESCEINRETE_URL_PRODOTTO); }
+function paginaProdotto(id){
+  var mappa=window.PESCEINRETE_URL_PRODOTTI;
+  if(mappa) return mappa[id]||null;
+  var schema=window.PESCEINRETE_URL_PRODOTTO;
+  return schema?schema.replace("{id}",id):null;
+}
+
 function scriviPanoramica(){
   var sezione=document.getElementById("panoramica");
   if(!sezione) return;
   if(D.prodotti.length<2){ sezione.hidden=true; return; }
   sezione.hidden=false;
-  var schema=window.PESCEINRETE_URL_PRODOTTO||null;
+  var schema=conPagine();
   var righe=D.prodotti.map(function(pr){
     var p=pr.percentile, att=pr.stagionale_attendibile;
     var classe=(!att||p===null)?"":(p>=80?" pir-posizione--alto":(p<=20?" pir-posizione--basso":""));
     var etichetta=(!att||p===null)?"storico corto":(p>=80?"sopra la norma":(p<=20?"sotto la norma":"nella norma"));
-    var nome=schema?'<a href="'+schema.replace("{id}",pr.id)+'">'+pr.nome+"</a>":
+    var indirizzo=schema?paginaProdotto(pr.id):null;
+    var nome=schema?(indirizzo?'<a href="'+indirizzo+'">'+pr.nome+"</a>":pr.nome):
       '<a href="#p='+pr.id+'" data-prodotto-riga="'+pr.id+'">'+pr.nome+"</a>";
     return "<tr><td>"+nome+"</td><td>"+num(pr.prezzo_eur_kg,2)+"</td><td>"+segno(pr.variazione_settimana,1)+"%</td>"+
       "<td>"+segno(pr.variazione_anno,1)+"%</td><td><span class='pir-posizione"+classe+"'>"+etichetta+"</span></td></tr>";
@@ -520,23 +533,27 @@ function scriviSelettore(){
   contenitore.hidden=false;
   if(mobile && select){
     mobile.hidden=false;
-    select.innerHTML=D.prodotti.map(function(pr){
+    select.innerHTML=D.prodotti.filter(function(pr){
+      return !conPagine()||pr.id===P.id||paginaProdotto(pr.id);
+    }).map(function(pr){
       return '<option value="'+pr.id+'"'+(pr.id===P.id?" selected":"")+'>'+pr.nome+" · "+num(pr.prezzo_eur_kg,2)+" €/kg</option>";
     }).join("");
     if(!select.getAttribute("data-collegato")){
       select.setAttribute("data-collegato","1");
       select.addEventListener("change",function(){
-        var schema=window.PESCEINRETE_URL_PRODOTTO||null;
-        if(schema){ window.location.href=schema.replace("{id}",select.value); return; }
+        if(conPagine()){ var meta=paginaProdotto(select.value); if(meta) window.location.href=meta; return; }
         caricaProdotto(select.value,function(prodotto){ P=prodotto; scriviSelettore(); mostraProdotto(); });
       });
     }
   }
-  var schema=window.PESCEINRETE_URL_PRODOTTO||null;   // es. "/dati-mercati/{id}/"
+  var schema=conPagine();
   contenitore.innerHTML=D.prodotti.map(function(prodotto){
     var prezzo='<span class="pir-selettore-prezzo">'+num(prodotto.prezzo_eur_kg,2)+'</span>';
     if(schema){
-      return '<a href="'+schema.replace("{id}",prodotto.id)+'" data-prodotto="'+prodotto.id+
+      var indirizzo=paginaProdotto(prodotto.id);
+      // specie senza pagina (non ancora pubblicata): niente collegamento morto
+      if(!indirizzo && prodotto.id!==P.id) return "";
+      return '<a href="'+(indirizzo||"#")+'" data-prodotto="'+prodotto.id+
         '" aria-current="'+(prodotto.id===P.id?"page":"false")+'">'+prodotto.nome+prezzo+"</a>";
     }
     return '<button type="button" data-prodotto="'+prodotto.id+'" aria-pressed="'+

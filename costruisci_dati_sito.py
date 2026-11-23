@@ -27,7 +27,7 @@ from pathlib import Path
 RADICE = Path(__file__).resolve().parent
 sys.path.insert(0, str(RADICE))
 
-from config.prodotti import nome_paese, pubblicati, serie_flussi
+from config.prodotti import nome_paese, pubblicati, serie_eumofa, serie_flussi
 from core import bollettino as modulo_bollettino
 from core import isoweek, mese, metrics, redazione
 from core.store import Archivio
@@ -82,10 +82,11 @@ def componi_prodotto(archivio: Archivio, scheda: dict, dimostrativo: bool, lingu
         return None, None, None
 
     in_origine = archivio.osservazioni(riferimenti["serie"])
-    # Le fonti con quotazioni giornaliere (RNM) scrivono il giorno:
-    # la settimana si costruisce qui.
-    if in_origine and in_origine[0]["periodo"].count("-") == 2:
-        in_origine = metrics.da_giornaliero_a_settimanale(in_origine)
+    # Serie doganali in cui la singola settimana salta con il mix dei
+    # carichi: il prezzo pubblicato è la media ponderata delle ultime N.
+    media_settimane = riferimenti.get("media_settimane")
+    if media_settimane:
+        in_origine = metrics.media_ponderata_mobile(in_origine, media_settimane)
 
     cambi = {}
     if riferimenti.get("cambio"):
@@ -108,12 +109,17 @@ def componi_prodotto(archivio: Archivio, scheda: dict, dimostrativo: bool, lingu
     anno_corrente = isoweek.scomponi(ultima)[0]
     ultime_52 = metrics.aggrega(in_euro, isoweek.sposta(ultima, -51), ultima)
     volumi_percentile = None
-    if anagrafica["valuta"] != "EUR":
+    con_volumi = any(o.get("quantita") for o in in_euro)
+    if con_volumi:
         serie_volumi = [{"periodo": o["periodo"], "valore": o.get("quantita")} for o in in_euro if o.get("quantita")]
         if serie_volumi:
             volumi_percentile = metrics.posizione_stagionale(serie_volumi, ultima).percentile
     revisioni = archivio.revisioni(riferimenti["serie"])[:20]
     flussi = componi_flussi(archivio, scheda, lingua)
+    provenienze = componi_provenienze(archivio, scheda, ultima, lingua)
+    indicatore = anagrafica["indicatore"]
+    if media_settimane:
+        indicatore = "Valore unitario delle importazioni, media mobile a quattro settimane"
 
     bozza = modulo_bollettino.componi(
         in_euro, in_origine, ultima, revisioni, traduci(scheda["nome"], lingua), lingua
@@ -136,7 +142,7 @@ def componi_prodotto(archivio: Archivio, scheda: dict, dimostrativo: bool, lingu
         ],
         "serie": {
             "id": anagrafica["id"],
-            "indicatore": tr(anagrafica["indicatore"]),
+            "indicatore": tr(indicatore),
             "fase": tr(anagrafica["fase"]),
             "mercato": tr(anagrafica["mercato"]),
             "presentazione": tr(anagrafica["presentazione"]),
@@ -157,7 +163,7 @@ def componi_prodotto(archivio: Archivio, scheda: dict, dimostrativo: bool, lingu
         "prezzo_eur_kg": arrotonda(disponibili[-1]["valore"], 3),
         "prezzo_origine": valore_a(in_origine, ultima),
         "cambio": arrotonda(disponibili[-1].get("cambio"), 4),
-        "volume_tonnellate": disponibili[-1].get("quantita"),
+        "volume_tonnellate": arrotonda(disponibili[-1].get("quantita"), 1),
         "variazioni": {c: arrotonda(v, 2) for c, v in variazioni.items()},
         "stagionale": {
             "percentile": arrotonda(stagionale.percentile, 1),
@@ -217,14 +223,16 @@ def componi_prodotto(archivio: Archivio, scheda: dict, dimostrativo: bool, lingu
                 "periodo": o["periodo"],
                 "eur": arrotonda(o.get("valore"), 3),
                 "origine": valore_a(in_origine, o["periodo"]),
-                "tonnellate": o.get("quantita") if anagrafica["valuta"] != "EUR" else None,
+                "tonnellate": arrotonda(o.get("quantita"), 1) if con_volumi else None,
                 "cambio": arrotonda(o.get("cambio"), 4),
             }
             for o in in_euro
             if isoweek.scomponi(o["periodo"])[0] >= anno_corrente - ANNI_IN_PAGINA
         ],
-        "con_volumi": anagrafica["valuta"] != "EUR",
+        "con_volumi": con_volumi,
+        "media_settimane": media_settimane,
         "flussi": flussi,
+        "provenienze_settimanali": provenienze,
         "revisioni_recenti": [
             {
                 "periodo": r["periodo"],
@@ -250,13 +258,67 @@ def componi_prodotto(archivio: Archivio, scheda: dict, dimostrativo: bool, lingu
         prezzo_eur=prodotto["prezzo_eur_kg"],
         variazioni=prodotto["variazioni"],
         stagionale=prodotto["stagionale"],
-        volumi=prodotto["volume_tonnellate"] if anagrafica["valuta"] != "EUR" else None,
+        volumi=prodotto["volume_tonnellate"] if con_volumi else None,
         volumi_percentile=volumi_percentile,
         flussi=flussi,
         lingua=lingua,
+        provenienza=nome_paese(scheda["eumofa"]["principale"], lingua) if scheda.get("eumofa") else None,
+        media_settimane=media_settimane,
     )
     prodotto["sintesi_html"] = sintesi_html(prodotto)
     return prodotto, prodotto["sintesi_html"], bozza.markdown()
+
+
+FINESTRA_PROVENIENZE = 4
+
+
+def componi_provenienze(archivio: Archivio, scheda: dict, ultima: str, lingua: str = "it"):
+    """Le provenienze extra-UE a confronto, sulle ultime quattro settimane.
+
+    Il prezzo in copertina è di una provenienza sola (o di tutte insieme).
+    Qui stanno le altre, come media ponderata delle ultime quattro
+    settimane: settimana per settimana il loro prezzo salta con il mix dei
+    carichi, su quattro settimane si legge. La variazione confronta con le
+    quattro settimane precedenti.
+    """
+    voce = scheda.get("eumofa")
+    if not voce:
+        return None
+    totale = metrics.finestra_ponderata(
+        archivio.osservazioni(serie_eumofa(scheda, "WORLD")), ultima, FINESTRA_PROVENIENZE)
+    righe = []
+    for partner in dict.fromkeys([voce["principale"], *voce.get("altre", []), "WORLD"]):
+        serie_id = serie_eumofa(scheda, partner)
+        if not archivio.serie(serie_id):
+            continue
+        osservazioni = archivio.osservazioni(serie_id)
+        adesso = metrics.finestra_ponderata(osservazioni, ultima, FINESTRA_PROVENIENZE)
+        prima = metrics.finestra_ponderata(
+            osservazioni, isoweek.sposta(ultima, -FINESTRA_PROVENIENZE), FINESTRA_PROVENIENZE)
+        if not adesso["tonnellate"]:
+            continue
+        variazione = None
+        if adesso["prezzo"] and prima["prezzo"] and prima["settimane_con_dati"] >= 2:
+            variazione = (adesso["prezzo"] - prima["prezzo"]) / prima["prezzo"] * 100
+        righe.append({
+            "codice": partner,
+            "paese": nome_paese(partner, lingua),
+            "tonnellate": arrotonda(adesso["tonnellate"], 0),
+            "quota": arrotonda(adesso["tonnellate"] / totale["tonnellate"] * 100, 0)
+            if totale["tonnellate"] else None,
+            "prezzo": arrotonda(adesso["prezzo"], 2),
+            "variazione": arrotonda(variazione, 1),
+            "settimane_con_dati": adesso["settimane_con_dati"],
+            "totale": partner == "WORLD",
+        })
+    if not righe:
+        return None
+    return {
+        "dalla": isoweek.sposta(ultima, -(FINESTRA_PROVENIENZE - 1)),
+        "alla": ultima,
+        "settimane": FINESTRA_PROVENIENZE,
+        "voci": righe,
+    }
 
 
 def componi_flussi(archivio: Archivio, scheda: dict, lingua: str = "it"):
@@ -297,7 +359,11 @@ def componi_flussi(archivio: Archivio, scheda: dict, lingua: str = "it"):
             })
     provenienze.sort(key=lambda x: -(x["tonnellate"] or 0))
 
+    # La provenienza citata nel testo: quella indicata nel registro se ha
+    # dati, altrimenti la più grande fra quelle seguite.
     principale = next((x for x in provenienze if x["codice"] == flussi.get("principale")), None)
+    if principale is None and provenienze:
+        principale = provenienze[0]
 
     def delta(adesso, prima):
         return (adesso - prima) / prima * 100 if adesso and prima else None
@@ -411,6 +477,26 @@ def sintesi_html(prodotto: dict) -> str:
     intestazioni = "".join(f"<th>{c}</th>" for c in colonne)
     didascalia = (T["didascalia_euro"] if in_euro else T["didascalia"]).format(fonte=html.escape(s["fonte"]))
 
+    provenienze = ""
+    pv = prodotto.get("provenienze_settimanali")
+    if pv and len(pv["voci"]) > 1:
+        P = T["provenienze"]
+        corpo = "".join(
+            "<tr" + (' class="pir-totale"' if r["totale"] else "") + ">"
+            f"<td>{html.escape(r['paese'][:1].upper() + r['paese'][1:])}</td>"
+            f"<td>{numero(r['prezzo'], 2, lingua)}</td>"
+            f"<td>{segno(r['variazione'], lingua)}</td>"
+            f"<td>{numero(r['tonnellate'], 0, lingua)}</td>"
+            f"<td>{numero(r['quota'], 0, lingua)}%</td></tr>"
+            for r in pv["voci"]
+        )
+        provenienze = (
+            f'<table class="pir-tabella pir-provenienze"><caption>'
+            + P["didascalia"].format(dalla=pv["dalla"][6:], alla=pv["alla"][6:])
+            + "</caption><thead><tr>" + "".join(f"<th>{c}</th>" for c in P["colonne"])
+            + f"</tr></thead><tbody>{corpo}</tbody></table>"
+        )
+
     return f"""<section class="pir-riquadro pir-sintesi" id="sintesi">
   <h2>{T["titolo"].format(nome=html.escape(prodotto['nome']))}</h2>
   <p class="pir-lede">{html.escape(prodotto.get('lede') or apertura)}</p>
@@ -419,6 +505,7 @@ def sintesi_html(prodotto: dict) -> str:
     <thead><tr>{intestazioni}</tr></thead>
     <tbody>{righe}</tbody>
   </table>
+  {provenienze}
   <dl class="pir-domande">{domande}</dl>
 </section>"""
 
@@ -426,6 +513,12 @@ def sintesi_html(prodotto: dict) -> str:
 # --------------------------------------------------------------------------
 # Utilità
 # --------------------------------------------------------------------------
+
+
+def segno(valore, lingua="it"):
+    if valore is None:
+        return "n.d." if lingua == "it" else "n/a"
+    return ("+" if valore > 0 else ("−" if valore < 0 else "")) + numero(abs(valore), 1, lingua) + "%"
 
 
 def arrotonda(valore, decimali):
@@ -540,6 +633,21 @@ def esegui(percorso_db: str, uscita: str) -> int:
             f"{len(indice)} file prodotto ({peso_prodotti / 1024:.0f} kB in tutto), "
             f"stato {documento['stato']}, lingua {lingua}"
         )
+
+    # Pulizia: i file di una specie tolta dal registro non devono restare
+    # in linea. Si cancellano sintesi, dati e anteprime che non hanno più
+    # una specie pubblicata dietro.
+    validi = {voce["id"] for voce in indice}
+    rimossi = 0
+    for modello, cartella_file in (("sintesi-*.html", cartella), ("*.json", cartella_prodotti),
+                                   ("*.png", cartella / "social")):
+        for percorso in cartella_file.glob(modello):
+            identificativo = percorso.name.split(".")[0].removeprefix("sintesi-")
+            if identificativo not in validi and identificativo != "indice":
+                percorso.unlink()
+                rimossi += 1
+    if rimossi:
+        print(f"Rimossi {rimossi} file di specie non più pubblicate")
 
     # Controllo: etichette di anagrafica senza traduzione inglese.
     etichette = []

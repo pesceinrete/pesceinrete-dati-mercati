@@ -28,10 +28,10 @@ stesso con i dati inclusi nel pacchetto, ma fermi alla data del pacchetto.
 **2. WordPress (il web designer).**
 
 1. Plugin → Aggiungi nuovo → Carica plugin → `pesceinrete-dati-mercati-plugin.zip` → Attiva.
-   All'attivazione il plugin crea 22 pagine **private**: `/dati-mercati/` e
+   All'attivazione il plugin crea 20 pagine **private**: `/dati-mercati/` e
    `/market-data/` con una pagina figlia per specie (`salmone`, `orata`,
-   `spigola`, `polpo`, `gambero`, `merluzzo`, `tonno`, `pesce_spada`,
-   `cozze`, `vongole`). Private: le vede solo chi è loggato come
+   `spigola`, `gambero`, `polpo`, `calamaro`, `seppia`, `astice`,
+   `pesce_spada`). Private: le vede solo chi è loggato come
    amministratore.
 2. Impostazioni → Dati e mercati → "Indirizzo dei file pubblicati":
    incollare l'indirizzo di GitHub Pages del passo 1 → Salva.

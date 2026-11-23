@@ -107,17 +107,22 @@ def definizioni() -> dict[str, dict]:
     return risultato
 
 
-def indirizzo(codice: str, dal_anno: int, al_anno: int | None = None) -> str:
+def indirizzo(codice: str, dal_anno: int, al_anno: int | None = None,
+              dal_mese: str | None = None, al_mese: str | None = None) -> str:
+    """Indirizzo della richiesta. `dal_mese` e `al_mese` ("AAAA-MM"), se
+    indicati, prevalgono sugli anni: servono a chiedere pochi mesi per volta."""
     parametri = {
         "format": "JSON",
         "freq": "M",
         "reporter": "IT",
         "product": codice,
         "flow": "1",  # 1 importazioni, 2 esportazioni
-        "sinceTimePeriod": f"{dal_anno}-01",
+        "sinceTimePeriod": dal_mese or f"{dal_anno}-01",
         "lang": "EN",
     }
-    if al_anno is not None:
+    if al_mese is not None:
+        parametri["untilTimePeriod"] = al_mese
+    elif al_anno is not None:
         parametri["untilTimePeriod"] = f"{al_anno}-12"
     return f"{BASE}/{INSIEME}?" + urllib.parse.urlencode(parametri)
 
@@ -128,19 +133,38 @@ def unisci(destinazione: dict, parte: dict) -> None:
         destinazione.setdefault(partner, {}).update(periodi)
 
 
+def _scarica_mesi(codice: str, anno: int, primo: int, ultimo: int) -> dict:
+    """Scarica i mesi primo..ultimo di un anno; se la risposta è troppo
+    grande (413) dimezza l'intervallo e riprova, fino al singolo mese."""
+    try:
+        return analizza(scarica(indirizzo(
+            codice, anno, dal_mese=f"{anno}-{primo:02d}", al_mese=f"{anno}-{ultimo:02d}")))
+    except urllib.error.HTTPError as errore:
+        if errore.code != 413 or primo == ultimo:
+            raise
+    meta = (primo + ultimo) // 2
+    risultato: dict = {}
+    unisci(risultato, _scarica_mesi(codice, anno, primo, meta))
+    unisci(risultato, _scarica_mesi(codice, anno, meta + 1, ultimo))
+    return risultato
+
+
 def scarica_a_blocchi(codice: str, dal_anno: int) -> dict:
     """Per i codici con molti partner (il salmone) il servizio risponde
     413, "risposta troppo grande", se si chiedono tutti gli anni insieme.
-    In quel caso si chiede un anno per volta e si uniscono i pezzi: il
-    risultato è identico a quello di una richiesta unica."""
+    In quel caso si chiede un anno per volta e, se anche un anno è troppo,
+    un semestre, un trimestre, fino al singolo mese. I pezzi si uniscono:
+    il risultato è identico a quello di una richiesta unica."""
     from datetime import date
     risultato: dict = {}
-    for anno in range(dal_anno, date.today().year + 1):
+    oggi = date.today()
+    for anno in range(dal_anno, oggi.year + 1):
+        ultimo = 12 if anno < oggi.year else oggi.month
         try:
-            unisci(risultato, analizza(scarica(indirizzo(codice, anno, anno))))
+            unisci(risultato, _scarica_mesi(codice, anno, 1, ultimo))
         except urllib.error.HTTPError as errore:
             # un anno ancora senza mesi pubblicati non è un errore
-            if errore.code in (400, 404) and anno == date.today().year:
+            if errore.code in (400, 404) and anno == oggi.year:
                 continue
             raise
     return risultato
@@ -265,7 +289,17 @@ def per_codice(codice: str, dal_anno: int) -> dict:
             documento = scarica(indirizzo(codice, dal_anno))
         except urllib.error.HTTPError as errore:
             if errore.code == 413:
-                risultato = scarica_a_blocchi(codice, dal_anno)
+                try:
+                    risultato = scarica_a_blocchi(codice, dal_anno)
+                except urllib.error.HTTPError as secondo:
+                    if secondo.code != 413:
+                        raise
+                    # troppo grande anche per un mese solo: il servizio sta
+                    # ignorando il filtro sul prodotto, cioè il codice non esiste
+                    STATO_CODICI[codice] = ("risposta troppo grande anche per un solo mese: il codice "
+                                            "quasi certamente non esiste nella nomenclatura")
+                    _CACHE[chiave] = {}
+                    return _CACHE[chiave]
                 totale = sum(v["quantita"] for p in risultato.values() for v in p.values())
                 STATO_CODICI[codice] = (
                     f"ok, {len(risultato)} partner (scaricato un anno per volta)" if totale > 0

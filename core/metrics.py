@@ -162,10 +162,12 @@ class PosizioneStagionale:
         frasi = STAGIONALE.get(lingua, STAGIONALE["it"])
         if self.percentile is None or not self.attendibile:
             return frasi["insufficiente"]
+        from .redazione import anni_di_confronto
+        anni = anni_di_confronto(len(self.anni_usati), lingua, "in")
         if self.percentile >= 99.5:
-            return frasi["massimo"]
+            return frasi["massimo"].format(anni=anni)
         if self.percentile <= 0.5:
-            return frasi["minimo"]
+            return frasi["minimo"].format(anni=anni)
         if self.percentile >= 80:
             return frasi["alto"].format(p=self.percentile)
         if self.percentile <= 20:
@@ -387,40 +389,55 @@ def costo_a_destino(
 
 
 # --------------------------------------------------------------------------
-# Da quotazioni giornaliere a serie settimanale
+# Media mobile ponderata sui volumi
 # --------------------------------------------------------------------------
 
 
-def da_giornaliero_a_settimanale(
-    osservazioni: list[dict], minimo_giorni: int = 2
+def media_ponderata_mobile(
+    osservazioni: list[dict], settimane: int = 4, minimo_settimane: int = 2
 ) -> list[dict]:
-    """Media settimanale di quotazioni giornaliere (chiave "AAAA-MM-GG").
+    """Prezzo medio delle ultime N settimane di calendario, pesato sui volumi.
 
-    Serve per le fonti come RNM, che pubblicano ogni giorno di mercato. La
-    settimana viene scritta solo se ha almeno `minimo_giorni` quotazioni:
-    una settimana con un giorno solo non è una settimana. Il numero di
-    giorni usati resta nella colonna quantità, così la pagina può
-    dichiararlo.
+    Serve per le serie doganali in cui il prezzo della singola settimana
+    salta con il mix dei carichi. Per ogni settimana con dati si sommano
+    gli euro e i chili delle settimane di calendario della finestra e si
+    divide: una settimana con pochi chili pesa poco. Le settimane senza
+    dati restano fuori dalla somma, non vengono inventate. Il risultato è
+    scritto solo se la finestra contiene almeno `minimo_settimane`
+    settimane con dati. La quantità resta quella della settimana.
     """
-    from datetime import date as _date
-
-    per_settimana: dict[str, list[float]] = {}
-    for o in osservazioni:
-        if o.get("valore") is None:
-            continue
-        anno, mese_, giorno = (int(p) for p in o["periodo"].split("-"))
-        chiave = isoweek.da_data(_date(anno, mese_, giorno))
-        per_settimana.setdefault(chiave, []).append(o["valore"])
-
+    per_periodo = {
+        o["periodo"]: o for o in osservazioni
+        if o.get("valore") is not None and o.get("quantita")
+    }
     risultato = []
-    for chiave in sorted(per_settimana):
-        valori = per_settimana[chiave]
-        if len(valori) < minimo_giorni:
-            continue
-        risultato.append(
-            {"periodo": chiave, "valore": sum(valori) / len(valori), "quantita": float(len(valori))}
-        )
+    for periodo in sorted(per_periodo):
+        finestra = [
+            per_periodo[s]
+            for s in (isoweek.sposta(periodo, -k) for k in range(settimane))
+            if s in per_periodo
+        ]
+        riga = dict(per_periodo[periodo])
+        peso = sum(o["quantita"] for o in finestra)
+        if len(finestra) >= minimo_settimane and peso > 0:
+            riga["valore"] = sum(o["valore"] * o["quantita"] for o in finestra) / peso
+        else:
+            riga["valore"] = None
+        risultato.append(riga)
     return risultato
+
+
+def finestra_ponderata(osservazioni: list[dict], ultima: str, settimane: int = 4) -> dict:
+    """Tonnellate e prezzo medio ponderato delle N settimane di calendario fino a `ultima`."""
+    periodi = {isoweek.sposta(ultima, -k) for k in range(settimane)}
+    dentro = [o for o in osservazioni
+              if o["periodo"] in periodi and o.get("valore") is not None and o.get("quantita")]
+    peso = sum(o["quantita"] for o in dentro)
+    return {
+        "tonnellate": peso if dentro else None,
+        "prezzo": (sum(o["valore"] * o["quantita"] for o in dentro) / peso) if peso else None,
+        "settimane_con_dati": len(dentro),
+    }
 
 
 # --------------------------------------------------------------------------

@@ -75,7 +75,7 @@ def modulo_coinvolto(registro: str) -> list[str]:
     if not ordinati:
         # indizi dalle fonti citate
         for parola, file in (("SSB", "ingest/ssb_laks.py"), ("Comext", "ingest/eurostat_comext.py"),
-                             ("RNM", "ingest/rnm_rungis.py"), ("BCE", "ingest/bce_cambi.py")):
+                             ("EUMOFA", "ingest/eumofa_import.py"), ("BCE", "ingest/bce_cambi.py")):
             if parola.lower() in registro.lower():
                 ordinati.append(file)
     return ordinati[:3]
@@ -96,7 +96,7 @@ def contesto(registro: str) -> dict:
             sorgenti[f] = percorso.read_text(encoding="utf-8")
     # la configurazione collegata al modulo
     for f in list(sorgenti):
-        for conf in ("config/rnm.json", "config/prodotti.py", "config/bmti.json"):
+        for conf in ("config/prodotti.py",):
             if conf.split("/")[1].split(".")[0] in f and (RADICE / conf).exists():
                 sorgenti[conf] = (RADICE / conf).read_text(encoding="utf-8")
     return {"file": file, "sorgenti": sorgenti, "registro": estratto(registro)}

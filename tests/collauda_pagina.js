@@ -170,8 +170,8 @@ setTimeout(() => {
   verifica("blocco statico presente nella pagina", sintesi && sintesi.textContent.length > 200);
   verifica(
     "la tabella statica ha dodici settimane",
-    sintesi && sintesi.querySelectorAll("tbody tr").length === 12,
-    sintesi ? sintesi.querySelectorAll("tbody tr").length + " righe" : "assente"
+    sintesi && sintesi.querySelectorAll("table:not(.pir-provenienze) tbody tr").length === 12,
+    sintesi ? sintesi.querySelectorAll("table:not(.pir-provenienze) tbody tr").length + " righe" : "assente"
   );
   verifica(
     "le domande frequenti sono testo, non script",
@@ -209,7 +209,7 @@ setTimeout(() => {
   if (dati.prodotti.length < 2) {
     console.log("  --    una sola specie con dati: controlli del selettore saltati");
   } else {
-  verifica("selettore visibile con dieci specie", !selettore.hidden && selettore.querySelectorAll("[data-prodotto]").length === dati.prodotti.length,
+  verifica("selettore visibile con tutte le specie", !selettore.hidden && selettore.querySelectorAll("[data-prodotto]").length === dati.prodotti.length,
     selettore.querySelectorAll("[data-prodotto]").length + " voci");
   verifica("ogni voce mostra il prezzo", selettore.querySelectorAll(".pir-selettore-prezzo").length === dati.prodotti.length);
   if (conFlussi) verifica("provenienze elencate negli arrivi", doc.querySelectorAll(".pir-provenienze li").length >= 2);
@@ -220,11 +220,19 @@ setTimeout(() => {
   verifica("cambio specie: titolo aggiornato", /Orata|sea bream/i.test(testo("pir-nome-prodotto")), testo("pir-nome-prodotto"));
   verifica("cambio specie: sintesi statica sostituita", /Orata|sea bream/i.test(doc.getElementById("pir-sintesi-statica").textContent));
   verifica("serie in euro: bottone valuta nascosto", doc.getElementById("pir-bottone-origine").hidden === true);
-  verifica("serie senza volumi: bottone volume nascosto", doc.querySelector('[data-misura="tonnellate"]').hidden === true);
+  verifica("serie doganale con volumi: bottone volume visibile", doc.querySelector('[data-misura="tonnellate"]').hidden === false);
   verifica("l'indirizzo segue la specie", /p=orata/.test(dom.window.location.hash));
-  verifica("serie in euro: tabella statica senza colonne ridondanti",
-    doc.querySelectorAll("#pir-sintesi-statica thead th").length === 2,
-    doc.querySelectorAll("#pir-sintesi-statica thead th").length + " colonne");
+  const tabellaPrezzi = doc.querySelector("#pir-sintesi-statica table.pir-tabella:not(.pir-provenienze)");
+  verifica("serie in euro: settimana, prezzo e tonnellate, senza la colonna in valuta d'origine",
+    tabellaPrezzi && tabellaPrezzi.querySelectorAll("thead th").length === 3,
+    tabellaPrezzi ? tabellaPrezzi.querySelectorAll("thead th").length + " colonne" : "assente");
+  const tabellaProvenienze = doc.querySelector("#pir-sintesi-statica table.pir-provenienze");
+  verifica("provenienze extra-UE a confronto: tabella presente con il totale",
+    tabellaProvenienze && tabellaProvenienze.querySelectorAll("tbody tr").length >= 2 &&
+    tabellaProvenienze.querySelectorAll("tr.pir-totale").length === 1,
+    tabellaProvenienze ? tabellaProvenienze.querySelectorAll("tbody tr").length + " righe" : "assente");
+  verifica("nessun riferimento a Rungis o BMTI in pagina",
+    !/rungis|bmti/i.test(doc.body.textContent));
   selettore.querySelector('[data-prodotto="salmone"]').dispatchEvent(new dom.window.Event("click"));
   verifica("ritorno al salmone: bottone volume visibile", doc.querySelector('[data-misura="tonnellate"]').hidden === false);
   } else if (dati.prodotti.length >= 2) {
@@ -317,7 +325,37 @@ setTimeout(() => {
       console.log("  --    nessuna nota della redazione: controllo saltato");
     }
     verifica("riga 'dalla tua ultima visita' con la variazione", d2.getElementById("pir-ultima-visita").hidden === false && /%/.test(d2.getElementById("pir-ultima-visita").textContent), d2.getElementById("pir-ultima-visita").textContent);
-    console.log(falliti === 0 ? "\nTutti i controlli superati." : "\n" + falliti + " controlli falliti.");
-    process.exit(falliti === 0 ? 0 : 1);
+    // Terza apertura: dentro il sito, con le pagine delle specie a indirizzi
+    // reali diversi dallo schema previsto, e solo due pagine pubblicate.
+    console.log("\nDentro il sito, con due sole pagine pubblicate");
+    const errori3 = [];
+    const vc3 = new VirtualConsole();
+    vc3.on("jsdomError", (e) => errori3.push(e.message));
+    const dom3 = new JSDOM(fs.readFileSync(pagina, "utf8"), {
+      runScripts: "dangerously", virtualConsole: vc3, pretendToBeVisual: true,
+      url: "https://www.pesceinrete.com/dati-mercati/",
+      beforeParse(window) {
+        window.PESCEINRETE_PRODOTTO = "salmone";
+        window.PESCEINRETE_URL_PRODOTTO = "https://www.pesceinrete.com/dati-mercati/{id}/";
+        window.PESCEINRETE_URL_PRODOTTI = {
+          salmone: "https://www.pesceinrete.com/salmone/",
+          orata: "https://www.pesceinrete.com/orata-2/",
+        };
+      },
+    });
+    setTimeout(() => {
+      const d3 = dom3.window.document;
+      const collegamenti = Array.from(d3.querySelectorAll("#pir-prodotti a")).map((a) => a.getAttribute("href"));
+      verifica("nessun errore dentro il sito", errori3.length === 0, errori3.join(" | "));
+      verifica("selettore: solo le specie che hanno una pagina, agli indirizzi veri",
+        collegamenti.length === 2 && collegamenti[0] === "https://www.pesceinrete.com/salmone/" &&
+        collegamenti[1] === "https://www.pesceinrete.com/orata-2/", collegamenti.join(", "));
+      const panoramica = Array.from(d3.querySelectorAll("#pir-tabella-panoramica tbody a")).map((a) => a.getAttribute("href"));
+      verifica("panoramica: collegate solo le specie con una pagina, nessun collegamento morto",
+        panoramica.length === 2 && panoramica.indexOf("https://www.pesceinrete.com/orata-2/") === 1 &&
+        d3.querySelectorAll("#pir-tabella-panoramica tbody tr").length > 2, panoramica.join(", "));
+      console.log(falliti === 0 ? "\nTutti i controlli superati." : "\n" + falliti + " controlli falliti.");
+      process.exit(falliti === 0 ? 0 : 1);
+    }, 400);
   }, 400);
 }, 400);

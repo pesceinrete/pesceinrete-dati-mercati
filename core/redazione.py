@@ -16,29 +16,27 @@ from .testi import MESI
 SOGGETTO = {
     "it": {
         "ssb": "{nome} all'esportazione dalla Norvegia",
-        "rnm": "{nome} all'ingrosso a Rungis",
-        "bmti": "{nome} sui mercati ittici italiani",
+        "eumofa": "{nome} all'importazione in Italia",
     },
     "en": {
         "ssb": "{nome} exported from Norway",
-        "rnm": "{nome} at the Rungis wholesale market",
-        "bmti": "{nome} on Italian fish markets",
+        "eumofa": "{nome} imported into Italy",
     },
 }
 
 ARTICOLI_IT = {
     "salmone": "Il salmone", "orata": "L'orata", "spigola": "La spigola", "polpo": "Il polpo",
-    "gambero": "Il gambero", "merluzzo": "Il merluzzo", "tonno": "Il tonno pinna gialla",
-    "pesce_spada": "Il pesce spada", "cozze": "Le cozze", "vongole": "Le vongole",
+    "gambero": "Il gambero", "calamaro": "Il calamaro", "seppia": "La seppia", "astice": "L'astice",
+    "pesce_spada": "Il pesce spada",
 }
-PLURALI_IT = {"cozze", "vongole"}
+PLURALI_IT: set[str] = set()
 
 NOMI_EN = {
     "salmone": "Salmon", "orata": "Sea bream", "spigola": "Sea bass", "polpo": "Octopus",
-    "gambero": "Shrimp", "merluzzo": "Cod", "tonno": "Yellowfin tuna",
-    "pesce_spada": "Swordfish", "cozze": "Mussels", "vongole": "Clams",
+    "gambero": "Shrimp", "calamaro": "Squid", "seppia": "Cuttlefish", "astice": "Lobster",
+    "pesce_spada": "Swordfish",
 }
-PLURALI_EN = {"cozze", "vongole"}
+PLURALI_EN: set[str] = set()
 
 
 def _del(valore: float) -> str:
@@ -48,6 +46,8 @@ def _del(valore: float) -> str:
     "dell'1,8%", "dell'84%". Tutti gli altri prendono "del".
     """
     intero = int(abs(valore))
+    if intero == 0:
+        return "dello "   # "dello 0,6%"
     testa = intero
     while testa >= 1000:
         testa //= 1000   # "mille", "un milione": consonante o "un"
@@ -55,6 +55,22 @@ def _del(valore: float) -> str:
         return "del "
     vocale = testa in (1, 8, 11) or 80 <= testa <= 89
     return "dell'" if vocale else "del "
+
+
+NUMERI_IT = {1: "un", 2: "due", 3: "tre", 4: "quattro", 5: "cinque"}
+NUMERI_EN = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five"}
+
+
+def anni_di_confronto(quanti: int, lingua: str = "it", forma: str = "di") -> str:
+    """'degli ultimi tre anni' / 'negli ultimi tre anni' / 'of the last three years'.
+
+    Il confronto stagionale usa gli anni che ci sono, fino a cinque: le
+    serie doganali partono dal 2023 e dichiarare cinque anni sarebbe falso.
+    """
+    quanti = max(1, min(int(quanti or 5), 5))
+    if lingua == "it":
+        return f"{'negli' if forma == 'in' else 'degli'} ultimi {NUMERI_IT[quanti]} anni"
+    return f"{'in' if forma == 'in' else 'of'} the last {NUMERI_EN[quanti]} years"
 
 
 def _da_paese(nome: str) -> str:
@@ -66,7 +82,9 @@ def _da_paese(nome: str) -> str:
     if nome[0] in "AEIOU":
         return "dall'" + nome
     femminili = ("Norvegia", "Grecia", "Turchia", "Croazia", "Spagna", "Mauritania", "Argentina",
-                 "India", "Islanda", "Danimarca", "Francia", "Thailandia")
+                 "India", "Islanda", "Danimarca", "Francia", "Thailandia", "Tunisia", "Albania", "Svezia", "Polonia")
+    if nome in ("Stati Uniti",):
+        return "dagli " + nome
     return ("dalla " if nome in femminili else "dal ") + nome
 
 
@@ -98,6 +116,8 @@ def lede(
     volumi_percentile: float | None,
     flussi: dict | None,
     lingua: str = "it",
+    provenienza: str | None = None,
+    media_settimane: int | None = None,
 ) -> str:
     frasi = []
     settimana = int(periodo[6:])
@@ -112,12 +132,14 @@ def lede(
         soggetto = ARTICOLI_IT.get(prodotto_id, nome)
         dove = {
             "ssb": "all'esportazione dalla Norvegia",
-            "rnm": "all'ingrosso a Rungis",
-            "bmti": "sui mercati ittici italiani",
+            "eumofa": "importato in Italia" if prodotto_id not in ("orata", "spigola", "seppia") else "importata in Italia",
         }.get(fonte, "")
+        if fonte == "eumofa" and provenienza and not provenienza.startswith("tutte"):
+            dove += " " + _da_paese(provenienza)
         verbo = "chiudono" if plurale else "chiude"
+        media = f" di media sulle ultime {media_settimane} settimane" if media_settimane else ""
         frasi.append(
-            f"{soggetto} {dove} {verbo} la settimana {settimana} a {_numero(prezzo_eur, 2, lingua)} €/kg"
+            f"{soggetto} {dove} {verbo} la settimana {settimana} a {_numero(prezzo_eur, 2, lingua)} €/kg{media}"
             + _movimento_it(v_sett, v_mese, pari) + "."
         )
         if v_anno is not None and abs(v_anno) >= 1:
@@ -153,12 +175,14 @@ def lede(
     soggetto = NOMI_EN.get(prodotto_id, nome)
     dove = {
         "ssb": "exported from Norway",
-        "rnm": "at the Rungis wholesale market",
-        "bmti": "on Italian fish markets",
+        "eumofa": "imported into Italy",
     }.get(fonte, "")
+    if fonte == "eumofa" and provenienza and not provenienza.startswith("all "):
+        dove += " from " + provenienza
     verbo = "close" if plurale else "closes"
+    media = f" on a {media_settimane}-week average" if media_settimane else ""
     frasi.append(
-        f"{soggetto} {dove} {verbo} week {settimana} at €{_numero(prezzo_eur, 2, lingua)}/kg"
+        f"{soggetto} {dove} {verbo} week {settimana} at €{_numero(prezzo_eur, 2, lingua)}/kg{media}"
         + _movimento_en(v_sett, v_mese, pari) + "."
     )
     if v_anno is not None and abs(v_anno) >= 1:
@@ -225,16 +249,17 @@ def _stagione_it(stagionale: dict, periodo: str) -> str:
     if not stagionale.get("attendibile") or p is None:
         return ""
     momento = _momento_del_mese(periodo, "it")
+    anni = anni_di_confronto(len(stagionale.get("anni") or []), "it")
     if p >= 99.5:
-        return f"Per {momento} è il livello più alto degli ultimi cinque anni."
+        return f"Per {momento} è il livello più alto {anni}."
     if p <= 0.5:
-        return f"Per {momento} è il livello più basso degli ultimi cinque anni."
+        return f"Per {momento} è il livello più basso {anni}."
     if p >= 80:
         return (f"Per {momento} è un prezzo alto: più caro {_del(p)}{_numero(p, 0, 'it')}% delle "
-                f"settimane comparabili degli ultimi cinque anni.")
+                f"settimane comparabili {anni}.")
     if p <= 20:
         return (f"Per {momento} è un prezzo basso: più economico {_del(100 - p)}{_numero(100 - p, 0, 'it')}% "
-                f"delle settimane comparabili degli ultimi cinque anni.")
+                f"delle settimane comparabili {anni}.")
     return f"Per {momento} è un livello nella norma."
 
 
@@ -243,14 +268,15 @@ def _stagione_en(stagionale: dict, periodo: str) -> str:
     if not stagionale.get("attendibile") or p is None:
         return ""
     momento = _momento_del_mese(periodo, "en")
+    anni = anni_di_confronto(len(stagionale.get("anni") or []), "en")
     if p >= 99.5:
-        return f"For {momento} it is the highest level of the last five years."
+        return f"For {momento} it is the highest level {anni}."
     if p <= 0.5:
-        return f"For {momento} it is the lowest level of the last five years."
+        return f"For {momento} it is the lowest level {anni}."
     if p >= 80:
         return (f"For {momento} it is a high price: dearer than {_numero(p, 0, 'en')}% of the "
-                f"comparable weeks of the last five years.")
+                f"comparable weeks {anni}.")
     if p <= 20:
         return (f"For {momento} it is a low price: cheaper than {_numero(100 - p, 0, 'en')}% of the "
-                f"comparable weeks of the last five years.")
+                f"comparable weeks {anni}.")
     return f"For {momento} it is a normal level."

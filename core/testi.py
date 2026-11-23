@@ -41,8 +41,8 @@ STAGIONALE = {
         "insufficiente": "Storico insufficiente per valutare la normalità stagionale.",
         "alto": "Più alto di circa il {p:.0f}% dei valori registrati in questo periodo dell'anno.",
         "basso": "Più basso di circa il {p:.0f}% dei valori registrati in questo periodo dell'anno.",
-        "massimo": "Più alto di tutti i valori registrati in questo periodo dell'anno negli ultimi cinque anni.",
-        "minimo": "Più basso di tutti i valori registrati in questo periodo dell'anno negli ultimi cinque anni.",
+        "massimo": "Più alto di tutti i valori registrati in questo periodo dell'anno {anni}.",
+        "minimo": "Più basso di tutti i valori registrati in questo periodo dell'anno {anni}.",
         "norma": "In linea con i valori abituali di questo periodo dell'anno.",
         "netto_prefisso": "Al netto del livello generale dei prezzi: ",
     },
@@ -50,8 +50,8 @@ STAGIONALE = {
         "insufficiente": "Not enough history to assess whether this level is seasonal.",
         "alto": "Higher than roughly {p:.0f}% of the values recorded at this time of year.",
         "basso": "Lower than roughly {p:.0f}% of the values recorded at this time of year.",
-        "massimo": "Higher than every value recorded at this time of year in the last five years.",
-        "minimo": "Lower than every value recorded at this time of year in the last five years.",
+        "massimo": "Higher than every value recorded at this time of year {anni}.",
+        "minimo": "Lower than every value recorded at this time of year {anni}.",
         "norma": "In line with the usual values for this time of year.",
         "netto_prefisso": "Net of the general price level: ",
     },
@@ -194,6 +194,10 @@ SINTESI = {
         ),
         "didascalia_euro": "Ultime dodici settimane. {fonte}.",
         "colonne": ("Settimana", "€/kg", "{unita}", "Tonnellate"),
+        "provenienze": {
+            "didascalia": "Provenienze extra-UE a confronto, media delle settimane {dalla}-{alla} pesata sui volumi. La variazione è sulle quattro settimane precedenti.",
+            "colonne": ("Provenienza", "€/kg", "Variazione", "Tonnellate", "Quota"),
+        },
     },
     "en": {
         "titolo": "{nome} <b>at a glance</b>",
@@ -222,6 +226,10 @@ SINTESI = {
         ),
         "didascalia_euro": "Last twelve weeks. {fonte}.",
         "colonne": ("Week", "€/kg", "{unita}", "Tonnes"),
+        "provenienze": {
+            "didascalia": "Non-EU origins compared, volume-weighted average of weeks {dalla}-{alla}. Change is against the previous four weeks.",
+            "colonne": ("Origin", "€/kg", "Change", "Tonnes", "Share"),
+        },
     },
 }
 

@@ -18,7 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from ingest import eurostat_comext, ssb_laks
 from ingest.bce_cambi import aggrega_per_settimana
-from ingest.eumofa_import import _normalizza_periodo, _numero
+from ingest import eumofa_import
 
 
 # --------------------------------------------------------------------------
@@ -218,18 +218,138 @@ def test_bce_media_settimanale_e_settimane_parziali():
 
 
 # --------------------------------------------------------------------------
-# EUMOFA da file
+# EUMOFA, importazioni settimanali
 # --------------------------------------------------------------------------
 
+INT_EUMOFA = "year~week~issuer~origin~goods~volume(Kg)~value(EUR)"
 
-def test_eumofa_normalizza_periodi_e_numeri():
-    assert _normalizza_periodo("2026-W12", None) == "2026-W12"
-    assert _normalizza_periodo("2026/12", None) == "2026-W12"
-    assert _normalizza_periodo("12", "2026") == "2026-W12"
-    assert _normalizza_periodo("2026-03-23", None) == "2026-W13"
-    assert _numero("1.234,56") == pytest.approx(1234.56)
-    assert _numero("1234,5") == pytest.approx(1234.5)
-    assert _numero("-") is None
+
+def file_eumofa(settimane: dict[int, int], extra: list[str] = ()) -> bytes:
+    """File annuale 2026 nel formato della fonte.
+
+    `settimane` dice quante righe "di riempimento" (altri Stati, altri
+    prodotti) ha ogni settimana: servono a far giudicare la completezza.
+    Per ogni settimana c'è anche l'orata turca verso l'Italia, 1.000 kg a
+    6,00 €/kg più 10 centesimi per settimana.
+    """
+    righe = [INT_EUMOFA]
+    for settimana, quante in settimane.items():
+        righe += [f"2026~{settimana:02d}~Spain~China~03074399-Cuttle fish and squid, frozen~10.0~40.0"] * quante
+        prezzo = 6.0 + settimana / 10
+        righe.append(f"2026~{settimana:02d}~Italy~Turkey~03028530-Fresh or chilled gilt-head sea bream~1000.0~{1000 * prezzo}")
+    righe += list(extra)
+    return "\n".join(righe).encode("utf-8")
+
+
+def test_eumofa_legge_italia_per_provenienza_e_scarta_il_resto():
+    serie = eumofa_import.definizioni()
+    extra = [
+        # stessa specie, altro Stato importatore: non è Italia
+        "2026~03~Greece~Turkey~03028530-Fresh or chilled gilt-head sea bream~5000.0~10000.0",
+        # Italia, altra provenienza: entra nel totale, non nella serie turca
+        "2026~03~Italy~Albania~03028530-Fresh or chilled gilt-head sea bream~1000.0~5000.0",
+        # Italia, altro sparide con codice diverso: fuori
+        "2026~03~Italy~Turkey~03028590-Fresh or chilled sea bream (other)~9000.0~9000.0",
+        # riga senza peso: saltata
+        "2026~03~Italy~Turkey~03028530-Fresh or chilled gilt-head sea bream~0.0~500.0",
+    ]
+    letto = eumofa_import.leggi(file_eumofa({s: 20 for s in range(1, 11)}, extra), serie)
+    turca = letto["somme"]["eumofa.it.import.orata.tr.settimanale"]["2026-W03"]
+    assert turca == [1000.0, pytest.approx(6300.0)]
+    totale = letto["somme"]["eumofa.it.import.orata.world.settimanale"]["2026-W03"]
+    assert totale == [2000.0, pytest.approx(11300.0)]
+    assert letto["somme"]["eumofa.it.import.orata.al.settimanale"]["2026-W03"] == [1000.0, 5000.0]
+
+
+def test_eumofa_pubblica_solo_le_settimane_complete():
+    # dieci settimane piene, la 11 a metà, la 12 appena cominciata
+    conteggi = {s: 20 for s in range(1, 11)} | {11: 9, 12: 3}
+    letto = eumofa_import.leggi(file_eumofa(conteggi), eumofa_import.definizioni())
+    complete, tipica = eumofa_import.settimane_complete(letto["per_settimana"])
+    assert tipica == 21                      # 20 di riempimento + la riga italiana
+    assert "2026-W10" in complete
+    assert "2026-W11" not in complete        # sotto il 70% della settimana tipica
+    assert "2026-W12" not in complete        # l'ultima del file non esce mai
+    oss = eumofa_import.osservazioni(
+        letto["somme"]["eumofa.it.import.orata.tr.settimanale"], complete)
+    assert [o.periodo for o in oss][-1] == "2026-W10"
+    assert oss[-1].valore == pytest.approx(7.0) and oss[-1].quantita == pytest.approx(1.0)  # tonnellate
+
+
+def test_eumofa_ultima_settimana_esclusa_anche_se_sembra_piena():
+    letto = eumofa_import.leggi(file_eumofa({s: 20 for s in range(1, 11)}), eumofa_import.definizioni())
+    complete, _ = eumofa_import.settimane_complete(letto["per_settimana"])
+    assert "2026-W10" not in complete and "2026-W09" in complete
+
+
+def test_eumofa_anno_chiuso_pubblica_anche_l_ultima_settimana():
+    letto = eumofa_import.leggi(file_eumofa({s: 20 for s in range(1, 11)}), eumofa_import.definizioni())
+    complete, _ = eumofa_import.settimane_complete(letto["per_settimana"], anno_chiuso=True)
+    assert "2026-W10" in complete and len(complete) == 10
+
+
+def test_eumofa_a_inizio_anno_vale_la_settimana_tipica_dell_anno_prima():
+    letto = eumofa_import.leggi(file_eumofa({1: 20, 2: 20, 3: 4}), eumofa_import.definizioni())
+    # senza riferimento la mediana di tre settimane non basta a giudicare
+    complete, tipica = eumofa_import.settimane_complete(letto["per_settimana"], tipica_di_riserva=40)
+    assert tipica == 40 and complete == set()       # 21 righe su 40 tipiche: incomplete
+    complete, _ = eumofa_import.settimane_complete(letto["per_settimana"], tipica_di_riserva=22)
+    assert complete == {"2026-W01", "2026-W02"}
+
+
+def test_eumofa_buchi_storici_restano_buchi():
+    conteggi = {s: 20 for s in range(1, 14)} | {5: 3}       # la settimana 5 è bucata alla fonte
+    letto = eumofa_import.leggi(file_eumofa(conteggi), eumofa_import.definizioni())
+    complete, _ = eumofa_import.settimane_complete(letto["per_settimana"])
+    assert "2026-W05" not in complete and "2026-W04" in complete and "2026-W06" in complete
+
+
+def test_eumofa_intestazione_cambiata_ferma_il_carico():
+    with pytest.raises(ValueError, match="cambiato struttura"):
+        eumofa_import.leggi(b"year;week;issuer\n2026;1;Italy", eumofa_import.definizioni())
+
+
+def test_eumofa_riconosce_le_grafie_alternative_dei_paesi():
+    extra = ["2026~03~Italy~T\u00fcrkiye~03028530-Fresh or chilled gilt-head sea bream~1000.0~6000.0"]
+    letto = eumofa_import.leggi(file_eumofa({s: 20 for s in range(1, 6)}, extra), eumofa_import.definizioni())
+    assert letto["somme"]["eumofa.it.import.orata.tr.settimanale"]["2026-W03"][0] == 2000.0
+
+
+def test_comext_dimezza_la_richiesta_quando_la_risposta_e_troppo_grande(monkeypatch):
+    """413 su un anno intero: semestre, trimestre, fino a un intervallo accettato."""
+    import urllib.error
+    import urllib.parse
+
+    chiamate = []
+
+    def finta(url, timeout=90):
+        q = dict(urllib.parse.parse_qsl(urllib.parse.urlparse(url).query))
+        dal, al = q["sinceTimePeriod"], q.get("untilTimePeriod")
+        chiamate.append((dal, al))
+        mesi = (int(al[:4]) * 12 + int(al[5:])) - (int(dal[:4]) * 12 + int(dal[5:])) + 1 if al else 99
+        if mesi > 3:
+            raise urllib.error.HTTPError(url, 413, "troppo grande", None, None)
+        return {"dal": dal, "al": al}
+
+    monkeypatch.setattr(eurostat_comext, "scarica", finta)
+    monkeypatch.setattr(eurostat_comext, "analizza",
+                        lambda d: {"NO": {d["dal"]: {"valore": 1.0, "quantita": 1.0}}})
+    risultato = eurostat_comext._scarica_mesi("03021400", 2025, 1, 12)
+    assert sorted(risultato["NO"]) == ["2025-01", "2025-04", "2025-07", "2025-10"]
+    assert ("2025-01", "2025-12") in chiamate and ("2025-01", "2025-03") in chiamate
+
+
+def test_comext_codice_inesistente_non_rompe_il_carico(monkeypatch):
+    import urllib.error
+
+    def sempre_413(url, timeout=90):
+        raise urllib.error.HTTPError(url, 413, "troppo grande", None, None)
+
+    monkeypatch.setattr(eurostat_comext, "scarica", sempre_413)
+    eurostat_comext._CACHE.clear()
+    assert eurostat_comext.per_codice("99999999", 2025) == {}
+    assert "non esiste" in eurostat_comext.STATO_CODICI["99999999"]
+    eurostat_comext._CACHE.clear()
 
 
 # --------------------------------------------------------------------------
@@ -314,15 +434,3 @@ def test_comext_usa_il_totale_mondo_della_fonte_se_presente():
     doc["value"] = {"0": 100.0, "1": 10.0, "2": 400.0, "3": 40.0}
     r = eurostat_comext.analizza(doc)
     assert eurostat_comext.somma_partner(r, "WORLD")["2026-M06"]["valore"] == pytest.approx(400.0)
-
-
-def test_rnm_etichette_reali_senza_accenti_e_con_barre():
-    from ingest.rnm_rungis import EstrattoreTabelle, cerca_righe, data_dalla_pagina, numero_francese
-    html = """<p>dernière cotation avant le 02-10-2026</p><table>
-      <tr><th>produit</th><th>prix moyen</th><th>mini</th><th>maxi</th></tr>
-      <tr><td>DAURADE Royale aquaculture 400-600g U.E.</td><td>8.50</td><td>8.00</td><td>9.00</td></tr>
-      <tr><td>DAURADE Royale aquaculture 600-800g U.E.</td><td>9.20</td><td>9.00</td><td>9.50</td></tr></table>"""
-    e = EstrattoreTabelle(); e.feed(html)
-    righe = cerca_righe(e.tabelle, "daurade royale aquaculture 400/600")
-    assert len(righe) == 1 and numero_francese(righe[0][1]) == pytest.approx(8.5)
-    assert str(data_dalla_pagina(html)) == "2026-10-02"

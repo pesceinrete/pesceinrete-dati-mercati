@@ -19,13 +19,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from config.prodotti import pubblicati, serie_flussi
+from config.prodotti import pubblicati, serie_eumofa, serie_flussi
 from core import isoweek, mese
 from core.store import Archivio, Osservazione
 from ingest.bce_cambi import definizione_serie
-from ingest.bmti import serie_dal_registro as serie_bmti
 from ingest.eurostat_comext import definizioni as definizioni_comext
-from ingest.rnm_rungis import serie_dal_registro as serie_rnm
+from ingest.eumofa_import import definizioni as definizioni_eumofa
 from ingest.ssb_laks import SERIE as SERIE_SSB
 
 PRIMO_ANNO = 2019
@@ -36,15 +35,14 @@ ULTIMO_MESE = "2026-M07"   # i flussi doganali escono con due o tre mesi di rita
 # ampiezza della stagionalità, volatilità settimanale, tonnellate importate al mese.
 PROFILI = {
     "salmone":     dict(livello=74.0, picco=20, ampiezza=0.22, rumore=2.4, mensili=2100, valuta="NOK"),
-    "orata":       dict(livello=6.1, picco=50, ampiezza=0.10, rumore=0.10, mensili=2600),
-    "spigola":     dict(livello=7.4, picco=50, ampiezza=0.11, rumore=0.12, mensili=2300),
-    "polpo":       dict(livello=10.8, picco=48, ampiezza=0.14, rumore=0.25, mensili=1900),
-    "gambero":     dict(livello=8.9, picco=48, ampiezza=0.08, rumore=0.18, mensili=4200),
-    "merluzzo":    dict(livello=9.6, picco=12, ampiezza=0.12, rumore=0.20, mensili=3600),
-    "tonno":       dict(livello=12.4, picco=28, ampiezza=0.09, rumore=0.30, mensili=1500),
-    "pesce_spada": dict(livello=11.9, picco=30, ampiezza=0.10, rumore=0.28, mensili=900),
-    "cozze":       dict(livello=1.65, picco=30, ampiezza=0.18, rumore=0.06, mensili=2800),
-    "vongole":     dict(livello=7.8, picco=52, ampiezza=0.15, rumore=0.22, mensili=180),
+    "orata":       dict(livello=5.9, picco=50, ampiezza=0.08, rumore=0.05, mensili=3300, settimanali=270),
+    "spigola":     dict(livello=7.2, picco=50, ampiezza=0.08, rumore=0.06, mensili=2300, settimanali=160),
+    "gambero":     dict(livello=5.6, picco=48, ampiezza=0.06, rumore=0.10, mensili=7000, settimanali=820),
+    "polpo":       dict(livello=10.6, picco=48, ampiezza=0.10, rumore=0.25, mensili=4000, settimanali=240),
+    "calamaro":    dict(livello=8.8, picco=30, ampiezza=0.06, rumore=0.30, mensili=3200, settimanali=200),
+    "seppia":      dict(livello=7.5, picco=10, ampiezza=0.07, rumore=0.30, mensili=1100, settimanali=190),
+    "astice":      dict(livello=20.0, picco=10, ampiezza=0.18, rumore=0.40, mensili=260, settimanali=45),
+    "pesce_spada": dict(livello=10.8, picco=30, ampiezza=0.06, rumore=0.20, mensili=900, settimanali=35),
 }
 
 
@@ -62,6 +60,8 @@ def serie_settimanale(prodotto_id: str, casuale: random.Random) -> list[Osservaz
             prezzo = profilo["livello"] * tendenza * (1 + profilo["ampiezza"] * stagione) + deriva
             prezzo = max(prezzo, profilo["livello"] * 0.45)
             quantita = None
+            if profilo.get("settimanali"):
+                quantita = round(max(profilo["settimanali"] * (1 + casuale.gauss(0, 0.15)), 1.0), 1)
             if profilo.get("valuta") == "NOK":
                 volume = 17000 + 5200 * math.cos((settimana - 46) / 52 * 2 * math.pi)
                 quantita = round(max(volume * (1 + casuale.gauss(0, 0.06)), 4000), 0)
@@ -122,10 +122,8 @@ def esegui(percorso_db: str) -> int:
     for definizione in SERIE_SSB.values():
         archivio.registra_serie(**definizione)
     archivio.registra_serie(**definizione_serie("NOK"))
-    for voce in serie_rnm():
-        archivio.registra_serie(id=voce["id"], **voce["anagrafica"])
-    for serie_id, voce in serie_bmti().items():
-        archivio.registra_serie(id=serie_id, **voce["anagrafica"])
+    for voce in definizioni_eumofa().values():
+        archivio.registra_serie(**voce["anagrafica"])
     for voce in definizioni_comext().values():
         archivio.registra_serie(**voce["anagrafica"])
 
@@ -146,6 +144,19 @@ def esegui(percorso_db: str) -> int:
             ])
 
         settimane += archivio.carica(serie_id, prezzi).nuove
+        if prodotto.get("eumofa"):
+            # le altre provenienze e il totale: stessa serie, spostata e ridotta
+            voce = prodotto["eumofa"]
+            for k, partner in enumerate(dict.fromkeys(["WORLD", *voce.get("altre", [])])):
+                altra = serie_eumofa(prodotto, partner)
+                if altra == serie_id:
+                    continue
+                scala = 1.35 if partner == "WORLD" else 0.25 / (k + 1)
+                archivio.carica(altra, [
+                    Osservazione(o.periodo, round(o.valore * (1 + 0.04 * (k - 1)) * (1 + casuale.gauss(0, 0.03)), 2),
+                                 round((o.quantita or 1) * scala, 1))
+                    for o in prezzi
+                ])
         for serie_flusso, osservazioni in serie_mensili(prodotto, casuale).items():
             mesi += archivio.carica(serie_flusso, osservazioni).nuove
 
