@@ -193,6 +193,16 @@
 .pir-tabella tbody tr:hover td{background:var(--g050)}
 .pir-tabella tbody tr:last-child td{border-bottom:0}
 .pir-tabella .pir-forte{font-weight:800}
+/* titolo della pagina e linguetta italiano / inglese (dentro il sito) */
+.pir-mercati .pir-titolo-pagina{font-size:36px;line-height:1.15;font-weight:800;color:#003757;margin:0 0 20px}
+@media (max-width:560px){.pir-mercati .pir-titolo-pagina{font-size:28px;margin-bottom:14px}}
+.pir-mercati .pir-titolo-riga{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 20px}
+.pir-mercati .pir-titolo-riga .pir-titolo-pagina{margin:0}
+.pir-mercati .pir-lingua{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border:1px solid #cfe6f5;border-radius:999px;background:#fff;color:#003757;font-size:14px;font-weight:600;text-decoration:none;white-space:nowrap}
+.pir-mercati .pir-lingua:hover{border-color:#1f8dcc;color:#1f8dcc}
+.pir-mercati .pir-lingua svg{border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,.08)}
+/* l'attributo hidden deve vincere sempre, anche sul tema del sito */
+.pir-mercati [hidden]{display:none!important}
 .pir-provenienze{margin-top:28px}
 .pir-provenienze tr.pir-totale td{font-weight:800;border-top:2px solid var(--g200);border-bottom:0}
 .pir-nota{margin:12px 0 0;padding:10px 12px;background:var(--avviso-velo);color:var(--avviso);font-size:13px;border-radius:8px}
@@ -340,7 +350,7 @@
 
         <div class="pir-eroe-corpo">
           <div class="pir-eroe-testo">
-            <h2 class="pir-prodotto" id="pir-nome-prodotto">Atlantic salmon</h2>
+            <h2 class="pir-prodotto" id="pir-nome-prodotto"></h2>
             <p class="pir-qualifica" id="pir-qualifica"></p>
             <p class="pir-prezzo" id="pir-prezzo">—<span>€/kg</span></p>
             <p class="pir-origine" id="pir-origine"></p>
@@ -388,8 +398,8 @@
 
       <!-- ============ tutte le specie ============ -->
       <section class="pir-riquadro pir-panoramica" id="panoramica" aria-labelledby="pir-titolo-panoramica" hidden>
-        <h2 id="pir-titolo-panoramica">All species, <b>this week</b></h2>
-        <p class="pir-spiega">Reference price in euro per kilo, change on the week and on the year, position against the season.</p>
+        <h2 id="pir-titolo-panoramica">All species, <b>latest available data</b></h2>
+        <p class="pir-spiega">Reference price in euro per kilo, with the week it refers to: sources are not all released on the same day. Change on the week and on the year, position against the season.</p>
         <div class="pir-scorri"><table class="pir-tabella" id="pir-tabella-panoramica"></table></div>
       </section>
 
@@ -640,7 +650,9 @@ function scriviIndirizzo(){
 function num(valore, decimali){
   if(valore===null||valore===undefined||valore===""||isNaN(valore)) return "n/a";
   var negativo=valore<0;
-  var parti=Math.abs(valore).toFixed(decimali).split(".");
+  // arrotondamento commerciale: 17,075 deve dare 17,08, e toFixed da solo dà 17,07
+  var scala=Math.pow(10,decimali);
+  var parti=(Math.round((Math.abs(valore)+1e-9)*scala)/scala).toFixed(decimali).split(".");
   parti[0]=parti[0].replace(/\B(?=(\d{3})+(?!\d))/g,",");
   return (negativo?"-":"")+parti[0]+(parti[1]?"."+parti[1]:"");
 }
@@ -1106,11 +1118,12 @@ function scriviPanoramica(){
     var indirizzo=schema?paginaProdotto(pr.id):null;
     var nome=schema?(indirizzo?'<a href="'+indirizzo+'">'+pr.nome+"</a>":pr.nome):
       '<a href="#p='+pr.id+'" data-prodotto-riga="'+pr.id+'">'+pr.nome+"</a>";
-    return "<tr><td>"+nome+"</td><td>"+num(pr.prezzo_eur_kg,2)+"</td><td>"+segno(pr.variazione_settimana,1)+"%</td>"+
+    var periodo="week "+Number(pr.ultimo_periodo.slice(6))+(pr.media_settimane?", "+pr.media_settimane+"-week avg":"");
+    return "<tr><td>"+nome+"</td><td>"+periodo+"</td><td>"+num(pr.prezzo_eur_kg,2)+"</td><td>"+segno(pr.variazione_settimana,1)+"%</td>"+
       "<td>"+segno(pr.variazione_anno,1)+"%</td><td><span class='pir-posizione"+classe+"'>"+etichetta+"</span></td></tr>";
   }).join("");
   document.getElementById("pir-tabella-panoramica").innerHTML=
-    "<thead><tr><th>Species</th><th>€/kg</th><th>Week</th><th>Year</th><th>Season</th></tr></thead><tbody>"+righe+"</tbody>";
+    "<thead><tr><th>Species</th><th>Period</th><th>€/kg</th><th>On the week</th><th>On the year</th><th>Season</th></tr></thead><tbody>"+righe+"</tbody>";
   if(!schema){
     Array.prototype.forEach.call(document.querySelectorAll("[data-prodotto-riga]"),function(a){
       a.addEventListener("click",function(ev){
@@ -1405,11 +1418,17 @@ function scriviStato(){
    ==================================================================== */
 function scaricaCsv(){
   var s=P.serie;
+  // la nota sull'elaborazione dipende dalla fonte: una serie già in euro non passa dal cambio
+  var inEuro=String(s.unita_origine||"").indexOf("EUR")===0;
+  var elaborazione=inEuro?
+    "# Processing by Pesceinrete: declared value divided by net weight, complete weeks only; already in euro, no exchange rate applied":
+    "# Processing by Pesceinrete: euro conversion at the average ECB rate of the same week";
+  if(inEuro && P.media_settimane) elaborazione+="; price = volume-weighted average of the last "+P.media_settimane+" weeks";
   var righe=[
     "# "+P.nome+" — "+s.indicatore,
     "# Source: "+s.fonte+" ("+s.fonte_url+")",
     "# Licence: "+s.licenza+" ("+s.licenza_url+")",
-    "# Processing by Pesceinrete: euro conversion at the average ECB rate of the same week",
+    elaborazione,
     "# Scope: "+s.conservazione+", "+s.pezzatura+", "+s.fase,
     "# Period extracted: "+selezione.dal+" - "+selezione.al,
     "# Data status: "+D.stato+" — extracted on "+new Date().toISOString().slice(0,10),
@@ -1605,9 +1624,13 @@ function esito(messaggio){
    ==================================================================== */
 function mostraProdotto(stato){
   stato=stato||{};
-  document.title=P.titolo_pagina+" — Pesceinrete";
-  var descrizione=document.querySelector('meta[name="description"]');
-  if(descrizione) descrizione.setAttribute("content",P.descrizione_pagina);
+  // Sulla pagina d'ingresso della sezione titolo e descrizione sono della
+  // sezione e li scrive il sito: non vanno sostituiti con quelli di una specie.
+  if(!window.PESCEINRETE_PAGINA_INGRESSO){
+    document.title=P.titolo_pagina+" — Pesceinrete";
+    var descrizione=document.querySelector('meta[name="description"]');
+    if(descrizione) descrizione.setAttribute("content",P.descrizione_pagina);
+  }
 
   var bottoneOrigine=document.getElementById("pir-bottone-origine");
   var inEuro=P.serie.valuta_origine==="EUR";
