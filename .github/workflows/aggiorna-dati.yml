@@ -18,6 +18,8 @@ on:
     - cron: "20 7 * * *"
     - cron: "20 11 * * *"
     - cron: "40 15 * * *"
+  # Lanciato a mano ricostruisce e pubblica sempre, anche senza dati nuovi:
+  # serve dopo aver aggiornato il codice della pagina.
   workflow_dispatch:
 
 concurrency:
@@ -26,7 +28,6 @@ concurrency:
 
 permissions:
   contents: write
-  actions: write
 
 jobs:
   aggiorna:
@@ -72,7 +73,7 @@ jobs:
         run: python strumenti/novita.py --db dati/archivio.sqlite --dal ${{ steps.inizio.outputs.istante }}
 
       - name: Ricostruisci pagina, sintesi e bollettino, in italiano e inglese
-        if: steps.novita.outputs.novita == 'si'
+        if: steps.novita.outputs.novita == 'si' || github.event_name == 'workflow_dispatch'
         run: |
           python costruisci_dati_sito.py --db dati/archivio.sqlite --uscita web/data
           python strumenti/componi_pagina.py
@@ -83,11 +84,11 @@ jobs:
 
       - name: Avvisi redazionali
         id: avvisi
-        if: steps.novita.outputs.novita == 'si'
+        if: steps.novita.outputs.novita == 'si' || github.event_name == 'workflow_dispatch'
         run: python strumenti/valuta_avvisi.py --dati web/data
 
       - name: Collaudo della pagina nelle due lingue
-        if: steps.novita.outputs.novita == 'si'
+        if: steps.novita.outputs.novita == 'si' || github.event_name == 'workflow_dispatch'
         run: |
           npm install jsdom --silent --no-fund --no-audit
           python strumenti/costruisci_anteprima.py
@@ -96,11 +97,11 @@ jobs:
           LINGUA=en NODE_PATH=$PWD/node_modules node tests/collauda_pagina.js
 
       - name: Cruscotto della redazione
-        if: steps.novita.outputs.novita == 'si'
+        if: steps.novita.outputs.novita == 'si' || github.event_name == 'workflow_dispatch'
         run: python strumenti/cruscotto_redazione.py --db dati/archivio.sqlite
 
       - name: Conserva cruscotto e bozza del bollettino
-        if: steps.novita.outputs.novita == 'si'
+        if: steps.novita.outputs.novita == 'si' || github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
           name: redazione-${{ github.run_number }}
@@ -113,7 +114,7 @@ jobs:
       # Pubblica solo se il collaudo è passato: se qualcosa si rompe,
       # online resta l'ultima versione valida e il commit non avviene.
       - name: Pubblica
-        if: steps.novita.outputs.novita == 'si'
+        if: steps.novita.outputs.novita == 'si' || github.event_name == 'workflow_dispatch'
         run: |
           git config user.name "Aggiornamento dati"
           git config user.email "redazione@pesceinrete.com"
@@ -122,16 +123,6 @@ jobs:
           # se nel frattempo qualcuno ha caricato file a mano, ci si riallinea prima di spingere
           git pull --rebase --autostash || true
           git push
-
-      # Un salvataggio fatto da un workflow non fa partire la pubblicazione,
-      # e l'innesco "workflow_run" non va bene con deploy-pages (cerca i file
-      # nell'esecuzione sbagliata). Si avvia quindi la pubblicazione a mano,
-      # da qui: l'avvio manuale è permesso anche al token del workflow.
-      - name: Avvia la pubblicazione su GitHub Pages
-        if: steps.novita.outputs.novita == 'si'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh workflow run pubblica-pagine.yml --repo "${{ github.repository }}" --ref "${{ github.ref_name }}"
 
       # Avviso opzionale: basta un segreto NOTIFICA_WEBHOOK con l'indirizzo
       # di un webhook (Slack, Teams, Make, Zapier o una casella email
