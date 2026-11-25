@@ -89,7 +89,9 @@ def _da_paese(nome: str) -> str:
 
 
 def _numero(valore: float, decimali: int, lingua: str) -> str:
-    testo = f"{abs(valore):,.{decimali}f}"
+    from decimal import ROUND_HALF_UP, Decimal
+    arrotondato = Decimal(repr(float(abs(valore)))).quantize(Decimal(1).scaleb(-decimali), rounding=ROUND_HALF_UP)
+    testo = f"{arrotondato:,.{decimali}f}"
     return testo.replace(",", "@").replace(".", ",").replace("@", ".") if lingua == "it" else testo
 
 
@@ -160,7 +162,11 @@ def lede(
         if flussi and flussi.get("dodici_mesi", {}).get("tonnellate"):
             d = flussi["dodici_mesi"]
             principale = flussi.get("principale")
-            testo = (f"Negli ultimi dodici mesi l'Italia ne ha importato "
+            intervallo = ""
+            if flussi.get("primo_mese_esteso") and flussi.get("ultimo_mese_esteso"):
+                a = "ad" if flussi['ultimo_mese_esteso'][0] in "aeiou" else "a"
+                intervallo = f" disponibili, da {flussi['primo_mese_esteso']} {a} {flussi['ultimo_mese_esteso']},"
+            testo = (f"Negli ultimi dodici mesi{intervallo} l'Italia ne ha importato "
                      f"{_numero(d['tonnellate'], 0, lingua)} tonnellate")
             if principale:
                 testo += f", per il {_numero(principale['quota'], 0, lingua)}% {_da_paese(principale['paese'])}"
@@ -200,7 +206,10 @@ def lede(
     if flussi and flussi.get("dodici_mesi", {}).get("tonnellate"):
         d = flussi["dodici_mesi"]
         principale = flussi.get("principale")
-        testo = f"Over the last twelve months Italy imported {_numero(d['tonnellate'], 0, lingua)} tonnes"
+        intervallo = ""
+        if flussi.get("primo_mese_esteso") and flussi.get("ultimo_mese_esteso"):
+            intervallo = f" available, {flussi['primo_mese_esteso']} to {flussi['ultimo_mese_esteso']},"
+        testo = f"Over the last twelve months{intervallo} Italy imported {_numero(d['tonnellate'], 0, lingua)} tonnes"
         if principale:
             testo += f", {_numero(principale['quota'], 0, lingua)}% of it from {principale['paese']}"
         if d.get("delta_tonnellate") is not None and abs(d["delta_tonnellate"]) >= 3:
