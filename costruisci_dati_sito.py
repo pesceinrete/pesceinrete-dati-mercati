@@ -376,6 +376,7 @@ def componi_flussi(archivio: Archivio, scheda: dict, lingua: str = "it"):
         "descrizione": traduci(flussi["descrizione"], lingua),
         "ultimo_mese": ultimo,
         "ultimo_mese_esteso": mese_esteso(ultimo, lingua),
+        "primo_mese_esteso": mese_esteso(mese.sposta(ultimo, -11), lingua),
         "mese": {
             "tonnellate": osservazioni[-1].get("quantita"),
             "valore_unitario": arrotonda(osservazioni[-1].get("valore"), 3),
@@ -412,6 +413,9 @@ def componi_flussi(archivio: Archivio, scheda: dict, lingua: str = "it"):
 def numero(valore, decimali=2, lingua="it"):
     if valore is None:
         return "n.d." if lingua == "it" else "n/a"
+    # arrotondamento commerciale (17,075 -> 17,08), non quello binario di Python
+    from decimal import ROUND_HALF_UP, Decimal
+    valore = Decimal(repr(float(valore))).quantize(Decimal(1).scaleb(-decimali), rounding=ROUND_HALF_UP)
     testo = f"{valore:,.{decimali}f}"
     if lingua == "it":
         return testo.replace(",", "@").replace(".", ",").replace("@", ".")
@@ -596,6 +600,7 @@ def esegui(percorso_db: str, uscita: str) -> int:
                 "titolo_pagina": prodotto["titolo_pagina"],
                 "descrizione_pagina": prodotto["descrizione_pagina"],
                 "ultimo_periodo": prodotto["ultimo_periodo"],
+                "media_settimane": prodotto.get("media_settimane"),
                 "prezzo_eur_kg": prodotto["prezzo_eur_kg"],
                 "unita_origine": prodotto["serie"]["unita_origine"],
                 "fonte": prodotto["serie"]["fonte"],
