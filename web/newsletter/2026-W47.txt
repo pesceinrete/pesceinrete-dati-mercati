@@ -1,7 +1,7 @@
 Dati e mercati · settimana 47: Salmone atlantico 7,17 €/kg (+3,3%)
 
 Salmone atlantico · 7,17 €/kg
-Il salmone all'esportazione dalla Norvegia chiude la settimana 47 a 7,17 €/kg, in rialzo del 3,3% sulla settimana. Per fine novembre è un livello nella norma. I volumi, 25.761 tonnellate, sono tra i più alti del periodo. Negli ultimi dodici mesi l'Italia ne ha importato 65.379 tonnellate, per il 74% dalla Svezia, in aumento del 6% sui dodici mesi precedenti.
+Il salmone all'esportazione dalla Norvegia chiude la settimana 47 a 7,17 €/kg, in rialzo del 3,3% sulla settimana. Per fine novembre è un livello nella norma. I volumi, 25.761 tonnellate, sono tra i più alti del periodo. Negli ultimi dodici mesi disponibili, da settembre 2025 ad agosto 2026, l'Italia ne ha importato 65.379 tonnellate, per il 74% dalla Svezia, in aumento del 6% sui dodici mesi precedenti.
 
 - Salmone atlantico: cambia la posizione rispetto alla stagione. Quattro settimane fa il prezzo si collocava nella fascia alta dei valori registrati in questo periodo dell'anno; ora si colloca nella fascia centrale (percentile 60 su 25 osservazioni degli anni 2021-2025). È il passaggio che conta per chi deve decidere se anticipare o rimandare un acquisto.
 
@@ -11,7 +11,7 @@ https://www.pesceinrete.com/dati-mercati/salmone/
 
 
 Orata · 5,31 €/kg
-L'orata importata in Italia dalla Turchia chiude la settimana 46 a 5,31 €/kg, in lieve rialzo dello 1,0% sulla settimana. Rispetto allo stesso periodo del 2025 il prezzo è più basso del 13,1%. Per metà novembre è un livello nella norma. I volumi, 337 tonnellate, sono tra i più alti del periodo. Negli ultimi dodici mesi l'Italia ne ha importato 40.437 tonnellate, per il 41% dalla Grecia, in aumento del 7% sui dodici mesi precedenti.
+L'orata importata in Italia dalla Turchia chiude la settimana 46 a 5,31 €/kg, in lieve rialzo dello 1,0% sulla settimana. Rispetto allo stesso periodo del 2025 il prezzo è più basso del 13,1%. Per metà novembre è un livello nella norma. I volumi, 337 tonnellate, sono tra i più alti del periodo. Negli ultimi dodici mesi disponibili, da settembre 2025 ad agosto 2026, l'Italia ne ha importato 40.437 tonnellate, per il 41% dalla Grecia, in aumento del 7% sui dodici mesi precedenti.
 
 - Volumi fuori dall'intervallo abituale. Le quantità della settimana (337 tonnellate) sono sopra quasi tutti i valori delle stesse settimane degli ultimi anni (intervallo abituale da 137 a 250 tonnellate). Sui volumi lo scarto anticipa spesso il prezzo delle settimane seguenti.
 
@@ -19,7 +19,7 @@ https://www.pesceinrete.com/dati-mercati/orata/
 
 
 Spigola · 7,28 €/kg
-La spigola importata in Italia dalla Turchia chiude la settimana 46 a 7,28 €/kg, in lieve rialzo dell'1,3% sulla settimana. Rispetto allo stesso periodo del 2025 il prezzo è più alto del 2,9%. Per metà novembre è un prezzo alto: più caro del 92% delle settimane comparabili degli ultimi tre anni. Negli ultimi dodici mesi l'Italia ne ha importato 29.897 tonnellate, per il 50% dalla Grecia.
+La spigola importata in Italia dalla Turchia chiude la settimana 46 a 7,28 €/kg, in lieve rialzo dell'1,3% sulla settimana. Rispetto allo stesso periodo del 2025 il prezzo è più alto del 2,9%. Per metà novembre è un prezzo alto: più caro del 92% delle settimane comparabili degli ultimi tre anni. Negli ultimi dodici mesi disponibili, da settembre 2025 ad agosto 2026, l'Italia ne ha importato 29.897 tonnellate, per il 50% dalla Grecia.
 
 - Movimento contrario a quello abituale del periodo. Nella settimana 46 il prezzo è in aumento del 1,3%. Nelle stesse settimane dei 3 anni precedenti il movimento medio era in calo del 1,7%. Vale la pena verificare con gli operatori se dipende da disponibilità, da domanda o da un fatto puntuale.
 
@@ -27,7 +27,7 @@ https://www.pesceinrete.com/dati-mercati/spigola/
 
 
 Gambero · 5,03 €/kg
-Il gambero importato in Italia dall'Ecuador chiude la settimana 46 a 5,03 €/kg, in calo del 9,2% sulla settimana, ma sopra dell'1,2% il livello di un mese fa. Rispetto allo stesso periodo del 2025 il prezzo è più basso del 14,7%. Per metà novembre è il livello più basso degli ultimi tre anni. Negli ultimi dodici mesi l'Italia ne ha importato 85.818 tonnellate, per il 50% dall'Ecuador.
+Il gambero importato in Italia dall'Ecuador chiude la settimana 46 a 5,03 €/kg, in calo del 9,2% sulla settimana, ma sopra dell'1,2% il livello di un mese fa. Rispetto allo stesso periodo del 2025 il prezzo è più basso del 14,7%. Per metà novembre è il livello più basso degli ultimi tre anni. Negli ultimi dodici mesi disponibili, da settembre 2025 ad agosto 2026, l'Italia ne ha importato 85.818 tonnellate, per il 50% dall'Ecuador.
 
 - La fonte ha corretto settimane già pubblicate. Sono state riviste 1 settimane: 2026-W45. I valori in pagina sono quelli aggiornati. L'archivio conserva anche quelli precedenti, quindi un confronto fatto la settimana scorsa resta ricostruibile.
 
@@ -35,19 +35,19 @@ https://www.pesceinrete.com/dati-mercati/gambero/
 
 
 Polpo · 11,51 €/kg
-Il polpo importato in Italia dal Marocco chiude la settimana 46 a 11,51 €/kg, in rialzo del 3,7% sulla settimana e del 2,8% sul mese. Rispetto allo stesso periodo del 2025 il prezzo è più alto dell'1,7%. Per metà novembre è un livello nella norma. Negli ultimi dodici mesi l'Italia ne ha importato 49.172 tonnellate, per il 24% dal Marocco, in aumento del 4% sui dodici mesi precedenti.
+Il polpo importato in Italia dal Marocco chiude la settimana 46 a 11,51 €/kg, in rialzo del 3,7% sulla settimana e del 2,8% sul mese. Rispetto allo stesso periodo del 2025 il prezzo è più alto dell'1,7%. Per metà novembre è un livello nella norma. Negli ultimi dodici mesi disponibili, da settembre 2025 ad agosto 2026, l'Italia ne ha importato 49.172 tonnellate, per il 24% dal Marocco, in aumento del 4% sui dodici mesi precedenti.
 
 https://www.pesceinrete.com/dati-mercati/polpo/
 
 
 Calamaro · 10,18 €/kg
-Il calamaro importato in Italia chiude la settimana 46 a 10,18 €/kg, in calo del 2,5% sulla settimana. Rispetto allo stesso periodo del 2025 il prezzo è più alto del 15,0%. Per metà novembre è il livello più alto degli ultimi tre anni. Negli ultimi dodici mesi l'Italia ne ha importato 60.706 tonnellate, per il 17% dal Marocco, in calo del 4% sui dodici mesi precedenti.
+Il calamaro importato in Italia chiude la settimana 46 a 10,18 €/kg, in calo del 2,5% sulla settimana. Rispetto allo stesso periodo del 2025 il prezzo è più alto del 15,0%. Per metà novembre è il livello più alto degli ultimi tre anni. Negli ultimi dodici mesi disponibili, da settembre 2025 ad agosto 2026, l'Italia ne ha importato 60.706 tonnellate, per il 17% dal Marocco, in calo del 4% sui dodici mesi precedenti.
 
 https://www.pesceinrete.com/dati-mercati/calamaro/
 
 
 Seppia · 7,01 €/kg
-La seppia importata in Italia chiude la settimana 46 a 7,01 €/kg di media sulle ultime 4 settimane, in lieve calo dello 0,6% sulla settimana. Rispetto allo stesso periodo del 2025 il prezzo è più basso dell'11,0%. Per metà novembre è un livello nella norma. I volumi, 438 tonnellate, sono tra i più alti del periodo. Negli ultimi dodici mesi l'Italia ne ha importato 12.298 tonnellate, per il 22% dal Senegal.
+La seppia importata in Italia chiude la settimana 46 a 7,01 €/kg di media sulle ultime 4 settimane, in lieve calo dello 0,6% sulla settimana. Rispetto allo stesso periodo del 2025 il prezzo è più basso dell'11,0%. Per metà novembre è un livello nella norma. I volumi, 438 tonnellate, sono tra i più alti del periodo. Negli ultimi dodici mesi disponibili, da settembre 2025 ad agosto 2026, l'Italia ne ha importato 12.298 tonnellate, per il 22% dal Senegal.
 
 - Volumi fuori dall'intervallo abituale. Le quantità della settimana (438 tonnellate) sono sopra quasi tutti i valori delle stesse settimane degli ultimi anni (intervallo abituale da 141 a 392 tonnellate). Sui volumi lo scarto anticipa spesso il prezzo delle settimane seguenti.
 
@@ -57,7 +57,7 @@ https://www.pesceinrete.com/dati-mercati/seppia/
 
 
 Astice · 16,26 €/kg
-L'astice importato in Italia chiude la settimana 46 a 16,26 €/kg, in calo del 4,8% sulla settimana e del 14,4% sul mese. Rispetto allo stesso periodo del 2025 il prezzo è più basso del 13,4%. Per metà novembre è il livello più basso degli ultimi tre anni. Negli ultimi dodici mesi l'Italia ne ha importato 2.897 tonnellate, per il 49% dagli Stati Uniti, in aumento del 4% sui dodici mesi precedenti.
+L'astice importato in Italia chiude la settimana 46 a 16,26 €/kg, in calo del 4,8% sulla settimana e del 14,4% sul mese. Rispetto allo stesso periodo del 2025 il prezzo è più basso del 13,4%. Per metà novembre è il livello più basso degli ultimi tre anni. Negli ultimi dodici mesi disponibili, da settembre 2025 ad agosto 2026, l'Italia ne ha importato 2.897 tonnellate, per il 49% dagli Stati Uniti, in aumento del 4% sui dodici mesi precedenti.
 
 - Astice: cambia la posizione rispetto alla stagione. Quattro settimane fa il prezzo si collocava nella fascia centrale dei valori registrati in questo periodo dell'anno; ora si colloca nella fascia bassa (percentile 0 su 12 osservazioni degli anni 2023-2025). È il passaggio che conta per chi deve decidere se anticipare o rimandare un acquisto.
 
@@ -65,7 +65,7 @@ https://www.pesceinrete.com/dati-mercati/astice/
 
 
 Pesce spada · 12,47 €/kg
-Il pesce spada importato in Italia chiude la settimana 46 a 12,47 €/kg, praticamente fermo sulla settimana precedente; sul mese il rialzo è del 2,6%. Rispetto allo stesso periodo del 2025 il prezzo è più alto del 7,7%. Per metà novembre è un prezzo alto: più caro del 92% delle settimane comparabili degli ultimi tre anni. Negli ultimi dodici mesi l'Italia ne ha importato 20.592 tonnellate, per il 66% dalla Spagna, in aumento dell'9% sui dodici mesi precedenti.
+Il pesce spada importato in Italia chiude la settimana 46 a 12,47 €/kg, praticamente fermo sulla settimana precedente; sul mese il rialzo è del 2,6%. Rispetto allo stesso periodo del 2025 il prezzo è più alto del 7,7%. Per metà novembre è un prezzo alto: più caro del 92% delle settimane comparabili degli ultimi tre anni. Negli ultimi dodici mesi disponibili, da settembre 2025 ad agosto 2026, l'Italia ne ha importato 20.592 tonnellate, per il 66% dalla Spagna, in aumento dell'9% sui dodici mesi precedenti.
 
 https://www.pesceinrete.com/dati-mercati/pesce_spada/
 
