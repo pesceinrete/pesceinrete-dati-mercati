@@ -185,6 +185,16 @@
 .pir-tabella tbody tr:hover td{background:var(--g050)}
 .pir-tabella tbody tr:last-child td{border-bottom:0}
 .pir-tabella .pir-forte{font-weight:800}
+/* titolo della pagina e linguetta italiano / inglese (dentro il sito) */
+.pir-mercati .pir-titolo-pagina{font-size:36px;line-height:1.15;font-weight:800;color:#003757;margin:0 0 20px}
+@media (max-width:560px){.pir-mercati .pir-titolo-pagina{font-size:28px;margin-bottom:14px}}
+.pir-mercati .pir-titolo-riga{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 20px}
+.pir-mercati .pir-titolo-riga .pir-titolo-pagina{margin:0}
+.pir-mercati .pir-lingua{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border:1px solid #cfe6f5;border-radius:999px;background:#fff;color:#003757;font-size:14px;font-weight:600;text-decoration:none;white-space:nowrap}
+.pir-mercati .pir-lingua:hover{border-color:#1f8dcc;color:#1f8dcc}
+.pir-mercati .pir-lingua svg{border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,.08)}
+/* l'attributo hidden deve vincere sempre, anche sul tema del sito */
+.pir-mercati [hidden]{display:none!important}
 .pir-provenienze{margin-top:28px}
 .pir-provenienze tr.pir-totale td{font-weight:800;border-top:2px solid var(--g200);border-bottom:0}
 .pir-nota{margin:12px 0 0;padding:10px 12px;background:var(--avviso-velo);color:var(--avviso);font-size:13px;border-radius:8px}

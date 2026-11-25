@@ -42,7 +42,9 @@ function scriviIndirizzo(){
 function num(valore, decimali){
   if(valore===null||valore===undefined||valore===""||isNaN(valore)) return "n.d.";
   var negativo=valore<0;
-  var parti=Math.abs(valore).toFixed(decimali).split(".");
+  // arrotondamento commerciale: 17,075 deve dare 17,08, e toFixed da solo dà 17,07
+  var scala=Math.pow(10,decimali);
+  var parti=(Math.round((Math.abs(valore)+1e-9)*scala)/scala).toFixed(decimali).split(".");
   parti[0]=parti[0].replace(/\B(?=(\d{3})+(?!\d))/g,".");
   return (negativo?"-":"")+parti[0]+(parti[1]?","+parti[1]:"");
 }
@@ -508,11 +510,12 @@ function scriviPanoramica(){
     var indirizzo=schema?paginaProdotto(pr.id):null;
     var nome=schema?(indirizzo?'<a href="'+indirizzo+'">'+pr.nome+"</a>":pr.nome):
       '<a href="#p='+pr.id+'" data-prodotto-riga="'+pr.id+'">'+pr.nome+"</a>";
-    return "<tr><td>"+nome+"</td><td>"+num(pr.prezzo_eur_kg,2)+"</td><td>"+segno(pr.variazione_settimana,1)+"%</td>"+
+    var periodo="sett. "+Number(pr.ultimo_periodo.slice(6))+(pr.media_settimane?", media "+pr.media_settimane+" sett.":"");
+    return "<tr><td>"+nome+"</td><td>"+periodo+"</td><td>"+num(pr.prezzo_eur_kg,2)+"</td><td>"+segno(pr.variazione_settimana,1)+"%</td>"+
       "<td>"+segno(pr.variazione_anno,1)+"%</td><td><span class='pir-posizione"+classe+"'>"+etichetta+"</span></td></tr>";
   }).join("");
   document.getElementById("pir-tabella-panoramica").innerHTML=
-    "<thead><tr><th>Specie</th><th>€/kg</th><th>Settimana</th><th>Anno</th><th>Stagione</th></tr></thead><tbody>"+righe+"</tbody>";
+    "<thead><tr><th>Specie</th><th>Periodo</th><th>€/kg</th><th>Sulla settimana</th><th>Sull'anno</th><th>Stagione</th></tr></thead><tbody>"+righe+"</tbody>";
   if(!schema){
     Array.prototype.forEach.call(document.querySelectorAll("[data-prodotto-riga]"),function(a){
       a.addEventListener("click",function(ev){
@@ -807,11 +810,17 @@ function scriviStato(){
    ==================================================================== */
 function scaricaCsv(){
   var s=P.serie;
+  // la nota sull'elaborazione dipende dalla fonte: una serie già in euro non passa dal cambio
+  var inEuro=String(s.unita_origine||"").indexOf("EUR")===0;
+  var elaborazione=inEuro?
+    "# Elaborazione Pesceinrete: valore dichiarato diviso peso netto, sole settimane complete; dato già in euro, nessun cambio applicato":
+    "# Elaborazione Pesceinrete: conversione in euro al cambio BCE medio della stessa settimana";
+  if(inEuro && P.media_settimane) elaborazione+="; prezzo = media delle ultime "+P.media_settimane+" settimane pesata sui volumi";
   var righe=[
     "# "+P.nome+" — "+s.indicatore,
     "# Fonte: "+s.fonte+" ("+s.fonte_url+")",
     "# Licenza: "+s.licenza+" ("+s.licenza_url+")",
-    "# Elaborazione Pesceinrete: conversione in euro al cambio BCE medio della stessa settimana",
+    elaborazione,
     "# Perimetro: "+s.conservazione+", "+s.pezzatura+", "+s.fase,
     "# Periodo estratto: "+selezione.dal+" - "+selezione.al,
     "# Stato dati: "+D.stato+" — estratto il "+new Date().toISOString().slice(0,10),
@@ -1007,9 +1016,13 @@ function esito(messaggio){
    ==================================================================== */
 function mostraProdotto(stato){
   stato=stato||{};
-  document.title=P.titolo_pagina+" — Pesceinrete";
-  var descrizione=document.querySelector('meta[name="description"]');
-  if(descrizione) descrizione.setAttribute("content",P.descrizione_pagina);
+  // Sulla pagina d'ingresso della sezione titolo e descrizione sono della
+  // sezione e li scrive il sito: non vanno sostituiti con quelli di una specie.
+  if(!window.PESCEINRETE_PAGINA_INGRESSO){
+    document.title=P.titolo_pagina+" — Pesceinrete";
+    var descrizione=document.querySelector('meta[name="description"]');
+    if(descrizione) descrizione.setAttribute("content",P.descrizione_pagina);
+  }
 
   var bottoneOrigine=document.getElementById("pir-bottone-origine");
   var inEuro=P.serie.valuta_origine==="EUR";
