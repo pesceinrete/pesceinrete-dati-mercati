@@ -193,7 +193,7 @@ PRODOTTI = [
             "principale": "EC",
         },
         "domande": [
-            ("Perché solo l'Ecuador ha il prezzo settimanale?", "Perché dall'Ecuador arriva un prodotto omogeneo, il vannamei, e il prezzo medio si muove come il mercato. Da Argentina e India arrivano prodotti e pezzature diversi: da una settimana all'altra il prezzo medio salta con il mix dei carichi, quindi lo mostriamo come media delle ultime quattro settimane."),
+            ("Perché solo l'Ecuador ha il prezzo settimanale?", "Perché dall'Ecuador arriva un prodotto omogeneo, gamberi del genere Penaeus quasi tutti sotto lo stesso codice doganale, e il prezzo medio si muove come il mercato. Da Argentina e India arrivano prodotti e pezzature diversi: da una settimana all'altra il prezzo medio salta con il mix dei carichi, quindi lo mostriamo come media delle ultime quattro settimane."),
             D_FRONTIERA, D_RITARDO,
         ],
     },
@@ -350,7 +350,7 @@ TRADUZIONI_EN_PRODOTTI = {
     "Interi o code": "Whole or tails",
     "Gamberi congelati, genere Penaeus e altri": "Frozen shrimps, genus Penaeus and others",
     "Perché solo l'Ecuador ha il prezzo settimanale?": "Why does only Ecuador have a weekly price?",
-    "Perché dall'Ecuador arriva un prodotto omogeneo, il vannamei, e il prezzo medio si muove come il mercato. Da Argentina e India arrivano prodotti e pezzature diversi: da una settimana all'altra il prezzo medio salta con il mix dei carichi, quindi lo mostriamo come media delle ultime quattro settimane.": "Because Ecuador ships a homogeneous product, vannamei, and the average price moves with the market. Argentina and India ship different products and sizes: from one week to the next the average price jumps with the mix of shipments, so we show it as the average of the last four weeks.",
+    "Perché dall'Ecuador arriva un prodotto omogeneo, gamberi del genere Penaeus quasi tutti sotto lo stesso codice doganale, e il prezzo medio si muove come il mercato. Da Argentina e India arrivano prodotti e pezzature diversi: da una settimana all'altra il prezzo medio salta con il mix dei carichi, quindi lo mostriamo come media delle ultime quattro settimane.": "Because Ecuador ships a homogeneous product, shrimps of the genus Penaeus almost all under the same customs code, and the average price moves with the market. Argentina and India ship different products and sizes: from one week to the next the average price jumps with the mix of shipments, so we show it as the average of the last four weeks.",
 
     "Polpo": "Octopus",
     "Importato in Italia dal Marocco; Senegal e Mauritania a confronto": "Imported into Italy from Morocco; Senegal and Mauritania for comparison",
