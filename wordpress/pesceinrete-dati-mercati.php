@@ -78,16 +78,7 @@ function pir_dm_shortcode( $attributi = array() ) {
 		$html = $stile . $parti[1];
 	}
 	// Testata e logo servono solo all'anteprima fuori dal sito.
-	// Al posto della testata dell'anteprima va il titolo della pagina WordPress,
-	// come unico h1, dentro lo sfondo della sezione. post_title evita il
-	// prefisso "Privato:" che WordPress aggiunge alle pagine private.
-	$titolo_h1 = esc_html( get_post_field( 'post_title', get_the_ID() ) );
-	$html      = preg_replace(
-		'#<header class="pir-testata"[^>]*>.*?</header>#si',
-		'<h1 class="pir-titolo-sezione pir-titolo-pagina">' . $titolo_h1 . '</h1>',
-		$html,
-		1
-	);
+	$html = preg_replace( '#<header class="pir-testata"[^>]*>.*?</header>#si', '', $html );
 	$html = preg_replace( '#<a [^>]*data-solo-anteprima[^>]*>.*?</a>#si', '', $html );
 
 	/**

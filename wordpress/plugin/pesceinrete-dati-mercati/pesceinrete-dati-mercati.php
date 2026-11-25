@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Pesceinrete — Dati e mercati
  * Description: Sezione di dati di mercato ittici: prezzi settimanali all'importazione, posizione stagionale, importazioni italiane. Crea da sola le pagine e legge i dati dal repository.
- * Version: 1.1.0
+ * Version: 1.2.1
  * Author: Pesceinrete
  * Text Domain: pesceinrete-dati-mercati
  *
@@ -19,7 +19,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'PIR_DM_VERSIONE', '1.1.0' );
+define( 'PIR_DM_VERSIONE', '1.2.1' );
 define( 'PIR_DM_CARTELLA', plugin_dir_path( __FILE__ ) . 'assets/' );
 define( 'PIR_DM_INDIRIZZO', plugin_dir_url( __FILE__ ) . 'assets/' );
 define( 'PIR_DM_OPZIONE', 'pir_dm_url_base' );
@@ -100,10 +100,45 @@ function pir_dm_url_dati( $lingua ) {
 }
 
 /* --------------------------------------------------------------------------
+ * Titolo e linguetta italiano / inglese
+ * -------------------------------------------------------------------------- */
+
+function pir_dm_riga_titolo( $lingua, $prodotto ) {
+	$titolo = get_the_title( get_queried_object_id() );
+	$altra  = ( 'en' === $lingua ) ? 'it' : 'en';
+	$mappa  = pir_dm_mappa_pagine();
+	$riga   = '<div class="pir-titolo-riga"><h1 class="pir-titolo-sezione pir-titolo-pagina">' . esc_html( $titolo ) . '</h1>';
+	if ( isset( $mappa[ $altra ][ $prodotto ] ) ) {
+		if ( 'en' === $altra ) {
+			$etichetta = 'English';
+			$aria      = 'English version';
+			$bandiera  = '<svg viewBox="0 0 60 30" width="30" height="15" aria-hidden="true" focusable="false">'
+				. '<clipPath id="pir-uk-a"><path d="M0,0v30h60V0z"/></clipPath>'
+				. '<clipPath id="pir-uk-b"><path d="M30,15h30v15zv15H0zH0V0zV0h30z"/></clipPath>'
+				. '<g clip-path="url(#pir-uk-a)"><path d="M0,0v30h60V0z" fill="#012169"/>'
+				. '<path d="M0,0L60,30M60,0L0,30" stroke="#fff" stroke-width="6"/>'
+				. '<path d="M0,0L60,30M60,0L0,30" clip-path="url(#pir-uk-b)" stroke="#C8102E" stroke-width="4"/>'
+				. '<path d="M30,0v30M0,15h60" stroke="#fff" stroke-width="10"/>'
+				. '<path d="M30,0v30M0,15h60" stroke="#C8102E" stroke-width="6"/></g></svg>';
+		} else {
+			$etichetta = 'Italiano';
+			$aria      = 'Versione italiana';
+			$bandiera  = '<svg viewBox="0 0 3 2" width="23" height="15" aria-hidden="true" focusable="false">'
+				. '<rect width="1" height="2" fill="#009246"/><rect x="1" width="1" height="2" fill="#fff"/>'
+				. '<rect x="2" width="1" height="2" fill="#CE2B37"/></svg>';
+		}
+		$riga .= '<a class="pir-lingua" href="' . esc_url( $mappa[ $altra ][ $prodotto ] ) . '" hreflang="' . $altra
+			. '" lang="' . $altra . '" aria-label="' . esc_attr( $aria ) . '">' . $bandiera . '<span>' . $etichetta . '</span></a>';
+	}
+	return $riga . '</div>';
+}
+
+/* --------------------------------------------------------------------------
  * Shortcode
  * -------------------------------------------------------------------------- */
 
 function pir_dm_shortcode( $attributi = array() ) {
+	$ingresso  = ! is_array( $attributi ) || empty( $attributi['prodotto'] );
 	$attributi = shortcode_atts(
 		array( 'prodotto' => 'salmone', 'lingua' => 'it' ),
 		$attributi,
@@ -127,22 +162,49 @@ function pir_dm_shortcode( $attributi = array() ) {
 	}
 	// La testata (briciole, titolo, occhiello) serve solo all'anteprima:
 	// dentro il sito titolo e menu li mette il tema.
-	// Al posto della testata dell'anteprima va il titolo della pagina WordPress,
-	// come unico h1, dentro lo sfondo della sezione. post_title evita il
-	// prefisso "Privato:" che WordPress aggiunge alle pagine private.
-	$titolo_h1 = esc_html( get_post_field( 'post_title', get_the_ID() ) );
-	$html      = preg_replace(
-		'#<header class="pir-testata"[^>]*>.*?</header>#si',
-		'<h1 class="pir-titolo-sezione pir-titolo-pagina">' . $titolo_h1 . '</h1>',
-		$html,
-		1
+	$html = preg_replace( '#<header class="pir-testata"[^>]*>.*?</header>#si', '', $html );
+	// Il logo nella testatina della sezione serve fuori dal sito: dentro, il
+	// logo lo mostra già l'intestazione del tema e ripeterlo sarebbe di troppo.
+	$html = preg_replace( '#<a [^>]*data-solo-anteprima[^>]*>.*?</a>#si', '', $html );
+	// Il logo nella testatina della sezione serve fuori dal sito: dentro, il
+	// logo lo mostra già l'intestazione del tema e ripeterlo sarebbe di troppo.
+	$html = preg_replace( '#<a [^>]*data-solo-anteprima[^>]*>.*?</a>#si', '', $html );
+
+	// Titolo della pagina e linguetta per passare all'altra lingua, in cima
+	// alla sezione. La linguetta compare solo se la pagina gemella esiste ed
+	// è visibile a chi sta guardando: mai un collegamento che porta a un errore.
+	$html = str_replace(
+		'<div class="pir-guscio">',
+		'<div class="pir-guscio">' . pir_dm_riga_titolo( $lingua, $ingresso ? '' : $prodotto ),
+		$html
 	);
-	// Il logo nella testatina della sezione serve fuori dal sito: dentro, il
-	// logo lo mostra già l'intestazione del tema e ripeterlo sarebbe di troppo.
-	$html = preg_replace( '#<a [^>]*data-solo-anteprima[^>]*>.*?</a>#si', '', $html );
-	// Il logo nella testatina della sezione serve fuori dal sito: dentro, il
-	// logo lo mostra già l'intestazione del tema e ripeterlo sarebbe di troppo.
-	$html = preg_replace( '#<a [^>]*data-solo-anteprima[^>]*>.*?</a>#si', '', $html );
+
+	// Lingua del contenuto: nelle pagine inglesi il resto del sito resta in
+	// italiano, quindi la lingua si dichiara sul contenitore della sezione.
+	$html = str_replace( '<div class="pir-mercati"', '<div class="pir-mercati" lang="' . $lingua . '"', $html );
+
+	// Nome e prezzo della specie scritti dal server: chi legge la pagina
+	// senza JavaScript (motori di ricerca compresi) vede la specie giusta.
+	$indice = pir_dm_indice( $lingua );
+	if ( $indice && ! empty( $indice['prodotti'] ) ) {
+		foreach ( $indice['prodotti'] as $voce ) {
+			if ( $voce['id'] !== $prodotto ) {
+				continue;
+			}
+			$html = str_replace(
+				'id="pir-nome-prodotto"></h2>',
+				'id="pir-nome-prodotto">' . esc_html( $voce['nome'] ) . '</h2>',
+				$html
+			);
+			if ( isset( $voce['prezzo_eur_kg'] ) && is_numeric( $voce['prezzo_eur_kg'] ) ) {
+				$prezzo = ( 'en' === $lingua )
+					? number_format( round( (float) $voce['prezzo_eur_kg'] + 1e-9, 2 ), 2, '.', ',' )
+					: number_format( round( (float) $voce['prezzo_eur_kg'] + 1e-9, 2 ), 2, ',', '.' );
+				$html   = str_replace( 'id="pir-prezzo">—<span>', 'id="pir-prezzo">' . $prezzo . '<span>', $html );
+			}
+			break;
+		}
+	}
 
 	// Blocco statico della specie: testo vero, indicizzabile, inserito dal server.
 	$sintesi = pir_dm_file( 'data/sintesi-' . $prodotto . $suffisso . '.html' );
@@ -161,6 +223,10 @@ function pir_dm_shortcode( $attributi = array() ) {
 		$avvio .= 'window.PESCEINRETE_URL_ISCRIZIONE=' . wp_json_encode( esc_url_raw( $iscrizione ) ) . ';';
 	}
 	$avvio .= 'window.PESCEINRETE_PRODOTTO=' . wp_json_encode( $prodotto ) . ';';
+	if ( $ingresso ) {
+		// pagina d'ingresso: titolo e descrizione restano quelli della sezione
+		$avvio .= 'window.PESCEINRETE_PAGINA_INGRESSO=true;';
+	}
 	$avvio .= 'window.PESCEINRETE_URL_PRODOTTO=' . wp_json_encode( home_url( '/' . $radice . '/{id}/' ) ) . ';';
 	// Gli indirizzi veri delle pagine delle specie: la pagina usa questi.
 	$mappa   = pir_dm_mappa_pagine();
@@ -504,6 +570,38 @@ foreach ( array( 'wpseo_opengraph_image', 'wpseo_twitter_image', 'rank_math/open
 	add_filter( $pir_dm_filtro, 'pir_dm_seo_immagine', 99 );
 }
 unset( $pir_dm_filtro );
+
+/* --------------------------------------------------------------------------
+ * Una sola serie di metadati social
+ *
+ * La sezione scrive da sé descrizione e metadati per le anteprime social
+ * (funzione pir_dm_testa). Se anche Yoast e Jetpack scrivono i propri, la
+ * pagina ne ha tre serie. Sulle pagine della sezione, e solo lì, si
+ * spengono quelli degli altri: resta una serie sola, quella giusta.
+ * -------------------------------------------------------------------------- */
+
+function pir_dm_spegni_jetpack( $attivo ) {
+	return pir_dm_e_pagina_sezione() ? false : $attivo;
+}
+add_filter( 'jetpack_enable_open_graph', 'pir_dm_spegni_jetpack', 99 );
+
+function pir_dm_sfoltisci_yoast( $presentatori ) {
+	if ( ! is_array( $presentatori ) || ! pir_dm_e_pagina_sezione() ) {
+		return $presentatori;
+	}
+	$tenuti = array();
+	foreach ( $presentatori as $presentatore ) {
+		$classe = is_object( $presentatore ) ? get_class( $presentatore ) : '';
+		// restano titolo, canonical, robots e dati strutturati
+		if ( false !== strpos( $classe, 'Open_Graph' ) || false !== strpos( $classe, 'Twitter' )
+			|| false !== strpos( $classe, 'Meta_Description' ) ) {
+			continue;
+		}
+		$tenuti[] = $presentatore;
+	}
+	return $tenuti;
+}
+add_filter( 'wpseo_frontend_presenters', 'pir_dm_sfoltisci_yoast', 99 );
 
 function pir_dm_data_modifica( $data, $formato, $post ) {
 	if ( ! $post || ! pir_dm_e_pagina_sezione() ) {
