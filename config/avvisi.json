@@ -1,0 +1,9 @@
+{
+  "_nota": "Avvisi redazionali: condizioni che, quando si verificano, finiscono nel messaggio di avviso del ciclo automatico e in web/data/avvisi.json. 'sopra'/'sotto' sono soglie in €/kg; 'variazione_settimana' è in percento, in valore assoluto. Si modifica su GitHub.",
+  "avvisi": [
+    {"specie": "salmone", "sopra": 8.50, "it": "Salmone oltre 8,50 €/kg", "en": "Salmon above €8.50/kg"},
+    {"specie": "salmone", "sotto": 5.50, "it": "Salmone sotto 5,50 €/kg", "en": "Salmon below €5.50/kg"},
+    {"specie": "orata", "sopra": 7.00, "it": "Orata turca oltre 7,00 €/kg all'importazione", "en": "Turkish sea bream above €7.00/kg at import"},
+    {"specie": "tutte", "variazione_settimana": 8, "it": "Variazione settimanale oltre l'8%", "en": "Weekly change above 8%"}
+  ]
+}
